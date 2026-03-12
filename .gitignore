@@ -1,4 +1,4 @@
-# Material para ignorar 
+# Material para ignorar
 hamadryas/
 material_cucu/
 SNPs.qmd
@@ -10,3 +10,4 @@ Vega-Sanchez2019/
 .vscode
 .Rproj.user
 .cspell
+/.quarto/

@@ -4310,591 +4310,592 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb31-21"><a href="#cb31-21" aria-hidden="true" tabindex="-1"></a><span class="co">  warning: false</span></span>
 <span id="cb31-22"><a href="#cb31-22" aria-hidden="true" tabindex="-1"></a><span class="co">  message: false</span></span>
 <span id="cb31-23"><a href="#cb31-23" aria-hidden="true" tabindex="-1"></a><span class="an">lang:</span><span class="co"> es</span></span>
-<span id="cb31-24"><a href="#cb31-24" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
-<span id="cb31-25"><a href="#cb31-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-26"><a href="#cb31-26" aria-hidden="true" tabindex="-1"></a><span class="fu"># Introducción</span></span>
-<span id="cb31-27"><a href="#cb31-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-28"><a href="#cb31-28" aria-hidden="true" tabindex="-1"></a>Vamos a realizar una práctica de análisis básicos de filogeografía, tratando de replicar algunos de los resultados del artículo de <span class="co">[</span><span class="ot">Vega-Sánchez et al., 2019</span><span class="co">](https://doi.org/10.1016/j.ympev.2019.106536)</span>. En este artículo se utilizaron secuencias COI e ITS de libélulas de la especie *Hetaerina americana*.</span>
-<span id="cb31-29"><a href="#cb31-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-30"><a href="#cb31-30" aria-hidden="true" tabindex="-1"></a>:::{.callout-note title=&quot;Preguntas&quot;}</span>
-<span id="cb31-31"><a href="#cb31-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-32"><a href="#cb31-32" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>¿Cuáles eran las preguntas de investigación del artículo?</span>
-<span id="cb31-33"><a href="#cb31-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-34"><a href="#cb31-34" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>¿Cuál es el resultado principal?</span>
-<span id="cb31-35"><a href="#cb31-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-36"><a href="#cb31-36" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb31-37"><a href="#cb31-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-38"><a href="#cb31-38" aria-hidden="true" tabindex="-1"></a>Nos enfocaremos en algunos de a análisis que se realizaron con las secuencias del COI. </span>
-<span id="cb31-39"><a href="#cb31-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-40"><a href="#cb31-40" aria-hidden="true" tabindex="-1"></a><span class="fu">## Objetivos</span></span>
-<span id="cb31-41"><a href="#cb31-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-42"><a href="#cb31-42" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Descargar las secuencias</span>
-<span id="cb31-43"><a href="#cb31-43" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Obtener metadatos geográficos</span>
-<span id="cb31-44"><a href="#cb31-44" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>Alinear secuencias y cortar regiones con datos faltantes</span>
-<span id="cb31-45"><a href="#cb31-45" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>Identificar haplotipos</span>
-<span id="cb31-46"><a href="#cb31-46" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>Obtener medidas básicas de diversidad genética </span>
-<span id="cb31-47"><a href="#cb31-47" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>Explorar la estructura genética mediante un análisis AMOVA</span>
-<span id="cb31-48"><a href="#cb31-48" aria-hidden="true" tabindex="-1"></a><span class="ss">7. </span>Explorar las relaciones entre haplotipos mediante una red de haplotipos </span>
-<span id="cb31-49"><a href="#cb31-49" aria-hidden="true" tabindex="-1"></a><span class="ss">8. </span>Comparar las relaciones en la red con su distribución en el mapa.</span>
-<span id="cb31-50"><a href="#cb31-50" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-51"><a href="#cb31-51" aria-hidden="true" tabindex="-1"></a><span class="fu">## Paquetes necesarios</span></span>
-<span id="cb31-52"><a href="#cb31-52" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-55"><a href="#cb31-55" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-56"><a href="#cb31-56" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: instalar-paquetes</span></span>
-<span id="cb31-57"><a href="#cb31-57" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
-<span id="cb31-58"><a href="#cb31-58" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-59"><a href="#cb31-59" aria-hidden="true" tabindex="-1"></a><span class="co"># Instalar paquetes desde CRAN</span></span>
-<span id="cb31-60"><a href="#cb31-60" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(</span>
-<span id="cb31-61"><a href="#cb31-61" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;bold&quot;</span>,        </span>
-<span id="cb31-62"><a href="#cb31-62" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;rentrez&quot;</span>,     </span>
-<span id="cb31-63"><a href="#cb31-63" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;ape&quot;</span>,         </span>
-<span id="cb31-64"><a href="#cb31-64" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;seqinr&quot;</span>,      </span>
-<span id="cb31-65"><a href="#cb31-65" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;stringr&quot;</span>,     </span>
-<span id="cb31-66"><a href="#cb31-66" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;dplyr&quot;</span>,       </span>
-<span id="cb31-67"><a href="#cb31-67" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;tidyr&quot;</span>,       </span>
-<span id="cb31-68"><a href="#cb31-68" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;ggplot2&quot;</span>,     </span>
-<span id="cb31-69"><a href="#cb31-69" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;knitr&quot;</span>,       </span>
-<span id="cb31-70"><a href="#cb31-70" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;kableExtra&quot;</span>,  </span>
-<span id="cb31-71"><a href="#cb31-71" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;here&quot;</span>,        </span>
-<span id="cb31-72"><a href="#cb31-72" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;fs&quot;</span>,          </span>
-<span id="cb31-73"><a href="#cb31-73" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;pegas&quot;</span>,       </span>
-<span id="cb31-74"><a href="#cb31-74" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;adegenet&quot;</span>,    </span>
-<span id="cb31-75"><a href="#cb31-75" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;poppr&quot;</span>,       </span>
-<span id="cb31-76"><a href="#cb31-76" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;RColorBrewer&quot;</span>,</span>
-<span id="cb31-77"><a href="#cb31-77" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;maps&quot;</span>,        </span>
-<span id="cb31-78"><a href="#cb31-78" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;scatterpie&quot;</span>,  </span>
-<span id="cb31-79"><a href="#cb31-79" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;gtools&quot;</span>       </span>
-<span id="cb31-80"><a href="#cb31-80" aria-hidden="true" tabindex="-1"></a>))</span>
-<span id="cb31-81"><a href="#cb31-81" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-82"><a href="#cb31-82" aria-hidden="true" tabindex="-1"></a><span class="co"># Instalar paquetes desde Bioconductor</span></span>
-<span id="cb31-83"><a href="#cb31-83" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">require</span>(<span class="st">&quot;BiocManager&quot;</span>, <span class="at">quietly =</span> <span class="cn">TRUE</span>)) {</span>
-<span id="cb31-84"><a href="#cb31-84" aria-hidden="true" tabindex="-1"></a>  <span class="fu">install.packages</span>(<span class="st">&quot;BiocManager&quot;</span>)</span>
-<span id="cb31-85"><a href="#cb31-85" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb31-86"><a href="#cb31-86" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-87"><a href="#cb31-87" aria-hidden="true" tabindex="-1"></a>BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="fu">c</span>(</span>
-<span id="cb31-88"><a href="#cb31-88" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Biostrings&quot;</span>,  </span>
-<span id="cb31-89"><a href="#cb31-89" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;msa&quot;</span>          </span>
-<span id="cb31-90"><a href="#cb31-90" aria-hidden="true" tabindex="-1"></a>))</span>
-<span id="cb31-91"><a href="#cb31-91" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-92"><a href="#cb31-92" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-95"><a href="#cb31-95" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-96"><a href="#cb31-96" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: cargar-paquetes</span></span>
-<span id="cb31-97"><a href="#cb31-97" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
-<span id="cb31-98"><a href="#cb31-98" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-99"><a href="#cb31-99" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(bold)       <span class="co"># Herramientas para descargar secuencias de la base de datos BOLD (Barcode of Life)</span></span>
-<span id="cb31-100"><a href="#cb31-100" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rentrez)    <span class="co"># Interfaz para consultar y descargar secuencias de NCBI (GenBank)</span></span>
-<span id="cb31-101"><a href="#cb31-101" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-102"><a href="#cb31-102" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ape)        <span class="co"># Manipulación de secuencias y análisis filogenéticos (DNAbin, distancias genéticas, árboles)</span></span>
-<span id="cb31-103"><a href="#cb31-103" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(Biostrings) <span class="co"># Manejo eficiente de secuencias biológicas (DNAStringSet, lectura y manipulación de FASTA)</span></span>
-<span id="cb31-104"><a href="#cb31-104" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(msa)        <span class="co"># Alineamiento múltiple de secuencias (MUSCLE, ClustalW, ClustalOmega)</span></span>
-<span id="cb31-105"><a href="#cb31-105" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(pegas)      <span class="co"># Análisis de genética poblacional y filogeografía (haplotipos, redes haplotípicas)</span></span>
-<span id="cb31-106"><a href="#cb31-106" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(adegenet)   <span class="co"># Análisis multivariado de datos genéticos (estructuración poblacional, objetos genéticos)</span></span>
-<span id="cb31-107"><a href="#cb31-107" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(poppr)      <span class="co"># Análisis de diversidad genética y clonación en poblaciones</span></span>
-<span id="cb31-108"><a href="#cb31-108" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-109"><a href="#cb31-109" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)    <span class="co"># Manipulación de cadenas de texto (nombres de secuencias, metadatos)</span></span>
-<span id="cb31-110"><a href="#cb31-110" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)      <span class="co"># Manipulación y filtrado de tablas de datos</span></span>
-<span id="cb31-111"><a href="#cb31-111" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)      <span class="co"># Reorganización de datos (pivotar, separar o combinar columnas)</span></span>
-<span id="cb31-112"><a href="#cb31-112" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gtools)     <span class="co"># Funciones auxiliares para manipulación de datos (por ejemplo ordenamiento natural)</span></span>
-<span id="cb31-113"><a href="#cb31-113" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-114"><a href="#cb31-114" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)    <span class="co"># Visualización de datos y generación de gráficos</span></span>
-<span id="cb31-115"><a href="#cb31-115" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(RColorBrewer) <span class="co"># Paletas de colores para visualización de datos</span></span>
-<span id="cb31-116"><a href="#cb31-116" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scatterpie) <span class="co"># Gráficos de pastel sobre mapas o coordenadas (ej. frecuencias de haplotipos)</span></span>
-<span id="cb31-117"><a href="#cb31-117" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-118"><a href="#cb31-118" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(knitr)      <span class="co"># Generación de tablas y reportes reproducibles</span></span>
-<span id="cb31-119"><a href="#cb31-119" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(kableExtra) <span class="co"># Mejora estética de tablas en HTML o PDF</span></span>
-<span id="cb31-120"><a href="#cb31-120" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-121"><a href="#cb31-121" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(here)       <span class="co"># Manejo de rutas relativas dentro de proyectos reproducibles</span></span>
-<span id="cb31-122"><a href="#cb31-122" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(fs)         <span class="co"># Manejo de archivos y directorios (crear, listar, verificar rutas)</span></span>
-<span id="cb31-123"><a href="#cb31-123" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-124"><a href="#cb31-124" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-125"><a href="#cb31-125" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-126"><a href="#cb31-126" aria-hidden="true" tabindex="-1"></a><span class="fu">### Paquetes que vale la pena estudiar para análisis genéticos</span></span>
-<span id="cb31-127"><a href="#cb31-127" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-128"><a href="#cb31-128" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Adegenet</span><span class="co">](https://adegenet.r-forge.r-project.org/)</span></span>
-<span id="cb31-129"><a href="#cb31-129" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Biostrings</span><span class="co">](https://bioconductor.org/packages/release/bioc/html/Biostrings.html)</span></span>
-<span id="cb31-130"><a href="#cb31-130" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">pegas</span><span class="co">](https://emmanuelparadis.github.io/pegas.html)</span> </span>
-<span id="cb31-131"><a href="#cb31-131" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Hay un libro de texto que se llama <span class="co">[</span><span class="ot">Population genetics with R</span><span class="co">](https://emmanuelparadis.github.io/PGR.html)</span> con el que pueden practicar</span>
-<span id="cb31-132"><a href="#cb31-132" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">ape</span><span class="co">](https://github.com/emmanuelparadis/ape)</span></span>
-<span id="cb31-133"><a href="#cb31-133" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Hay un libro de texto que se llama <span class="co">[</span><span class="ot">Analysis of Phylogenetics and Evolution with R</span><span class="co">](https://emmanuelparadis.github.io/APER.html)</span></span>
-<span id="cb31-134"><a href="#cb31-134" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-24"><a href="#cb31-24" aria-hidden="true" tabindex="-1"></a><span class="an">output-file:</span><span class="co"> index.html</span></span>
+<span id="cb31-25"><a href="#cb31-25" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb31-26"><a href="#cb31-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-27"><a href="#cb31-27" aria-hidden="true" tabindex="-1"></a><span class="fu"># Introducción</span></span>
+<span id="cb31-28"><a href="#cb31-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-29"><a href="#cb31-29" aria-hidden="true" tabindex="-1"></a>Vamos a realizar una práctica de análisis básicos de filogeografía, tratando de replicar algunos de los resultados del artículo de <span class="co">[</span><span class="ot">Vega-Sánchez et al., 2019</span><span class="co">](https://doi.org/10.1016/j.ympev.2019.106536)</span>. En este artículo se utilizaron secuencias COI e ITS de libélulas de la especie *Hetaerina americana*.</span>
+<span id="cb31-30"><a href="#cb31-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-31"><a href="#cb31-31" aria-hidden="true" tabindex="-1"></a>:::{.callout-note title=&quot;Preguntas&quot;}</span>
+<span id="cb31-32"><a href="#cb31-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-33"><a href="#cb31-33" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>¿Cuáles eran las preguntas de investigación del artículo?</span>
+<span id="cb31-34"><a href="#cb31-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-35"><a href="#cb31-35" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>¿Cuál es el resultado principal?</span>
+<span id="cb31-36"><a href="#cb31-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-37"><a href="#cb31-37" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb31-38"><a href="#cb31-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-39"><a href="#cb31-39" aria-hidden="true" tabindex="-1"></a>Nos enfocaremos en algunos de a análisis que se realizaron con las secuencias del COI. </span>
+<span id="cb31-40"><a href="#cb31-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-41"><a href="#cb31-41" aria-hidden="true" tabindex="-1"></a><span class="fu">## Objetivos</span></span>
+<span id="cb31-42"><a href="#cb31-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-43"><a href="#cb31-43" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Descargar las secuencias</span>
+<span id="cb31-44"><a href="#cb31-44" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Obtener metadatos geográficos</span>
+<span id="cb31-45"><a href="#cb31-45" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>Alinear secuencias y cortar regiones con datos faltantes</span>
+<span id="cb31-46"><a href="#cb31-46" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>Identificar haplotipos</span>
+<span id="cb31-47"><a href="#cb31-47" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>Obtener medidas básicas de diversidad genética </span>
+<span id="cb31-48"><a href="#cb31-48" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>Explorar la estructura genética mediante un análisis AMOVA</span>
+<span id="cb31-49"><a href="#cb31-49" aria-hidden="true" tabindex="-1"></a><span class="ss">7. </span>Explorar las relaciones entre haplotipos mediante una red de haplotipos </span>
+<span id="cb31-50"><a href="#cb31-50" aria-hidden="true" tabindex="-1"></a><span class="ss">8. </span>Comparar las relaciones en la red con su distribución en el mapa.</span>
+<span id="cb31-51"><a href="#cb31-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-52"><a href="#cb31-52" aria-hidden="true" tabindex="-1"></a><span class="fu">## Paquetes necesarios</span></span>
+<span id="cb31-53"><a href="#cb31-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-56"><a href="#cb31-56" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-57"><a href="#cb31-57" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: instalar-paquetes</span></span>
+<span id="cb31-58"><a href="#cb31-58" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
+<span id="cb31-59"><a href="#cb31-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-60"><a href="#cb31-60" aria-hidden="true" tabindex="-1"></a><span class="co"># Instalar paquetes desde CRAN</span></span>
+<span id="cb31-61"><a href="#cb31-61" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(</span>
+<span id="cb31-62"><a href="#cb31-62" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;bold&quot;</span>,        </span>
+<span id="cb31-63"><a href="#cb31-63" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;rentrez&quot;</span>,     </span>
+<span id="cb31-64"><a href="#cb31-64" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;ape&quot;</span>,         </span>
+<span id="cb31-65"><a href="#cb31-65" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;seqinr&quot;</span>,      </span>
+<span id="cb31-66"><a href="#cb31-66" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;stringr&quot;</span>,     </span>
+<span id="cb31-67"><a href="#cb31-67" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;dplyr&quot;</span>,       </span>
+<span id="cb31-68"><a href="#cb31-68" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;tidyr&quot;</span>,       </span>
+<span id="cb31-69"><a href="#cb31-69" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;ggplot2&quot;</span>,     </span>
+<span id="cb31-70"><a href="#cb31-70" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;knitr&quot;</span>,       </span>
+<span id="cb31-71"><a href="#cb31-71" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;kableExtra&quot;</span>,  </span>
+<span id="cb31-72"><a href="#cb31-72" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;here&quot;</span>,        </span>
+<span id="cb31-73"><a href="#cb31-73" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;fs&quot;</span>,          </span>
+<span id="cb31-74"><a href="#cb31-74" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;pegas&quot;</span>,       </span>
+<span id="cb31-75"><a href="#cb31-75" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;adegenet&quot;</span>,    </span>
+<span id="cb31-76"><a href="#cb31-76" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;poppr&quot;</span>,       </span>
+<span id="cb31-77"><a href="#cb31-77" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;RColorBrewer&quot;</span>,</span>
+<span id="cb31-78"><a href="#cb31-78" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;maps&quot;</span>,        </span>
+<span id="cb31-79"><a href="#cb31-79" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;scatterpie&quot;</span>,  </span>
+<span id="cb31-80"><a href="#cb31-80" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;gtools&quot;</span>       </span>
+<span id="cb31-81"><a href="#cb31-81" aria-hidden="true" tabindex="-1"></a>))</span>
+<span id="cb31-82"><a href="#cb31-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-83"><a href="#cb31-83" aria-hidden="true" tabindex="-1"></a><span class="co"># Instalar paquetes desde Bioconductor</span></span>
+<span id="cb31-84"><a href="#cb31-84" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">require</span>(<span class="st">&quot;BiocManager&quot;</span>, <span class="at">quietly =</span> <span class="cn">TRUE</span>)) {</span>
+<span id="cb31-85"><a href="#cb31-85" aria-hidden="true" tabindex="-1"></a>  <span class="fu">install.packages</span>(<span class="st">&quot;BiocManager&quot;</span>)</span>
+<span id="cb31-86"><a href="#cb31-86" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb31-87"><a href="#cb31-87" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-88"><a href="#cb31-88" aria-hidden="true" tabindex="-1"></a>BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="fu">c</span>(</span>
+<span id="cb31-89"><a href="#cb31-89" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Biostrings&quot;</span>,  </span>
+<span id="cb31-90"><a href="#cb31-90" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;msa&quot;</span>          </span>
+<span id="cb31-91"><a href="#cb31-91" aria-hidden="true" tabindex="-1"></a>))</span>
+<span id="cb31-92"><a href="#cb31-92" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb31-93"><a href="#cb31-93" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-96"><a href="#cb31-96" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-97"><a href="#cb31-97" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: cargar-paquetes</span></span>
+<span id="cb31-98"><a href="#cb31-98" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
+<span id="cb31-99"><a href="#cb31-99" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-100"><a href="#cb31-100" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(bold)       <span class="co"># Herramientas para descargar secuencias de la base de datos BOLD (Barcode of Life)</span></span>
+<span id="cb31-101"><a href="#cb31-101" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rentrez)    <span class="co"># Interfaz para consultar y descargar secuencias de NCBI (GenBank)</span></span>
+<span id="cb31-102"><a href="#cb31-102" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-103"><a href="#cb31-103" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ape)        <span class="co"># Manipulación de secuencias y análisis filogenéticos (DNAbin, distancias genéticas, árboles)</span></span>
+<span id="cb31-104"><a href="#cb31-104" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(Biostrings) <span class="co"># Manejo eficiente de secuencias biológicas (DNAStringSet, lectura y manipulación de FASTA)</span></span>
+<span id="cb31-105"><a href="#cb31-105" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(msa)        <span class="co"># Alineamiento múltiple de secuencias (MUSCLE, ClustalW, ClustalOmega)</span></span>
+<span id="cb31-106"><a href="#cb31-106" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(pegas)      <span class="co"># Análisis de genética poblacional y filogeografía (haplotipos, redes haplotípicas)</span></span>
+<span id="cb31-107"><a href="#cb31-107" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(adegenet)   <span class="co"># Análisis multivariado de datos genéticos (estructuración poblacional, objetos genéticos)</span></span>
+<span id="cb31-108"><a href="#cb31-108" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(poppr)      <span class="co"># Análisis de diversidad genética y clonación en poblaciones</span></span>
+<span id="cb31-109"><a href="#cb31-109" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-110"><a href="#cb31-110" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)    <span class="co"># Manipulación de cadenas de texto (nombres de secuencias, metadatos)</span></span>
+<span id="cb31-111"><a href="#cb31-111" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)      <span class="co"># Manipulación y filtrado de tablas de datos</span></span>
+<span id="cb31-112"><a href="#cb31-112" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)      <span class="co"># Reorganización de datos (pivotar, separar o combinar columnas)</span></span>
+<span id="cb31-113"><a href="#cb31-113" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gtools)     <span class="co"># Funciones auxiliares para manipulación de datos (por ejemplo ordenamiento natural)</span></span>
+<span id="cb31-114"><a href="#cb31-114" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-115"><a href="#cb31-115" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)    <span class="co"># Visualización de datos y generación de gráficos</span></span>
+<span id="cb31-116"><a href="#cb31-116" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(RColorBrewer) <span class="co"># Paletas de colores para visualización de datos</span></span>
+<span id="cb31-117"><a href="#cb31-117" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scatterpie) <span class="co"># Gráficos de pastel sobre mapas o coordenadas (ej. frecuencias de haplotipos)</span></span>
+<span id="cb31-118"><a href="#cb31-118" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-119"><a href="#cb31-119" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(knitr)      <span class="co"># Generación de tablas y reportes reproducibles</span></span>
+<span id="cb31-120"><a href="#cb31-120" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(kableExtra) <span class="co"># Mejora estética de tablas en HTML o PDF</span></span>
+<span id="cb31-121"><a href="#cb31-121" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-122"><a href="#cb31-122" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(here)       <span class="co"># Manejo de rutas relativas dentro de proyectos reproducibles</span></span>
+<span id="cb31-123"><a href="#cb31-123" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(fs)         <span class="co"># Manejo de archivos y directorios (crear, listar, verificar rutas)</span></span>
+<span id="cb31-124"><a href="#cb31-124" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-125"><a href="#cb31-125" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb31-126"><a href="#cb31-126" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-127"><a href="#cb31-127" aria-hidden="true" tabindex="-1"></a><span class="fu">### Paquetes que vale la pena estudiar para análisis genéticos</span></span>
+<span id="cb31-128"><a href="#cb31-128" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-129"><a href="#cb31-129" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Adegenet</span><span class="co">](https://adegenet.r-forge.r-project.org/)</span></span>
+<span id="cb31-130"><a href="#cb31-130" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Biostrings</span><span class="co">](https://bioconductor.org/packages/release/bioc/html/Biostrings.html)</span></span>
+<span id="cb31-131"><a href="#cb31-131" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">pegas</span><span class="co">](https://emmanuelparadis.github.io/pegas.html)</span> </span>
+<span id="cb31-132"><a href="#cb31-132" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Hay un libro de texto que se llama <span class="co">[</span><span class="ot">Population genetics with R</span><span class="co">](https://emmanuelparadis.github.io/PGR.html)</span> con el que pueden practicar</span>
+<span id="cb31-133"><a href="#cb31-133" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">ape</span><span class="co">](https://github.com/emmanuelparadis/ape)</span></span>
+<span id="cb31-134"><a href="#cb31-134" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Hay un libro de texto que se llama <span class="co">[</span><span class="ot">Analysis of Phylogenetics and Evolution with R</span><span class="co">](https://emmanuelparadis.github.io/APER.html)</span></span>
 <span id="cb31-135"><a href="#cb31-135" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-136"><a href="#cb31-136" aria-hidden="true" tabindex="-1"></a>¿Qué estudiar?</span>
-<span id="cb31-137"><a href="#cb31-137" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb31-138"><a href="#cb31-138" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>¿Cuál es la estructura de los objetos principales de cada paquete? </span>
-<span id="cb31-139"><a href="#cb31-139" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>¿Cómo puedo manipular las distintas partes?</span>
-<span id="cb31-140"><a href="#cb31-140" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>¿Cómo transformar entre ellos?</span>
-<span id="cb31-141"><a href="#cb31-141" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>¿Qué cosas puedo hacer con cada uno?</span>
-<span id="cb31-142"><a href="#cb31-142" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-143"><a href="#cb31-143" aria-hidden="true" tabindex="-1"></a><span class="fu">## Organización del proyecto </span></span>
-<span id="cb31-144"><a href="#cb31-144" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-145"><a href="#cb31-145" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Vamos a generar la estructura de directorios. </span>
-<span id="cb31-146"><a href="#cb31-146" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-149"><a href="#cb31-149" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-150"><a href="#cb31-150" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
-<span id="cb31-151"><a href="#cb31-151" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
-<span id="cb31-152"><a href="#cb31-152" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-153"><a href="#cb31-153" aria-hidden="true" tabindex="-1"></a>fs<span class="sc">::</span><span class="fu">dir_tree</span>(<span class="st">&quot;hetaerina_lab&quot;</span>, <span class="at">recurse =</span> F)</span>
-<span id="cb31-154"><a href="#cb31-154" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-155"><a href="#cb31-155" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-136"><a href="#cb31-136" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-137"><a href="#cb31-137" aria-hidden="true" tabindex="-1"></a>¿Qué estudiar?</span>
+<span id="cb31-138"><a href="#cb31-138" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb31-139"><a href="#cb31-139" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>¿Cuál es la estructura de los objetos principales de cada paquete? </span>
+<span id="cb31-140"><a href="#cb31-140" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>¿Cómo puedo manipular las distintas partes?</span>
+<span id="cb31-141"><a href="#cb31-141" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>¿Cómo transformar entre ellos?</span>
+<span id="cb31-142"><a href="#cb31-142" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>¿Qué cosas puedo hacer con cada uno?</span>
+<span id="cb31-143"><a href="#cb31-143" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-144"><a href="#cb31-144" aria-hidden="true" tabindex="-1"></a><span class="fu">## Organización del proyecto </span></span>
+<span id="cb31-145"><a href="#cb31-145" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-146"><a href="#cb31-146" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Vamos a generar la estructura de directorios. </span>
+<span id="cb31-147"><a href="#cb31-147" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-150"><a href="#cb31-150" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-151"><a href="#cb31-151" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
+<span id="cb31-152"><a href="#cb31-152" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
+<span id="cb31-153"><a href="#cb31-153" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-154"><a href="#cb31-154" aria-hidden="true" tabindex="-1"></a>fs<span class="sc">::</span><span class="fu">dir_tree</span>(<span class="st">&quot;hetaerina_lab&quot;</span>, <span class="at">recurse =</span> F)</span>
+<span id="cb31-155"><a href="#cb31-155" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb31-156"><a href="#cb31-156" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-159"><a href="#cb31-159" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-160"><a href="#cb31-160" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: crear-directorios</span></span>
-<span id="cb31-161"><a href="#cb31-161" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
-<span id="cb31-162"><a href="#cb31-162" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-163"><a href="#cb31-163" aria-hidden="true" tabindex="-1"></a><span class="co"># Crear estructura de carpetas del proyecto</span></span>
-<span id="cb31-164"><a href="#cb31-164" aria-hidden="true" tabindex="-1"></a>dirs <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
-<span id="cb31-165"><a href="#cb31-165" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;hetaerina_lab/00_raw_sequences&quot;</span>,</span>
-<span id="cb31-166"><a href="#cb31-166" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;hetaerina_lab/01_metadata&quot;</span>,</span>
-<span id="cb31-167"><a href="#cb31-167" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;hetaerina_lab/02_aligned&quot;</span>,</span>
-<span id="cb31-168"><a href="#cb31-168" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;hetaerina_lab/03_outputs&quot;</span></span>
-<span id="cb31-169"><a href="#cb31-169" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb31-170"><a href="#cb31-170" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-171"><a href="#cb31-171" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (d <span class="cf">in</span> dirs) {</span>
-<span id="cb31-172"><a href="#cb31-172" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">dir.exists</span>(d)) <span class="fu">dir.create</span>(d, <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb31-173"><a href="#cb31-173" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb31-174"><a href="#cb31-174" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-175"><a href="#cb31-175" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-176"><a href="#cb31-176" aria-hidden="true" tabindex="-1"></a><span class="fu">## Descarga de los datos</span></span>
-<span id="cb31-177"><a href="#cb31-177" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-178"><a href="#cb31-178" aria-hidden="true" tabindex="-1"></a>En el material suplementario del artículo, en la tabla S1 podemos encontrar los números de acceso de las secuencias COI e ITS de las libélulas </span>
-<span id="cb31-179"><a href="#cb31-179" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-180"><a href="#cb31-180" aria-hidden="true" tabindex="-1"></a>Primero vamos a generar un vector con todos los números de acceso de *H. americana* </span>
-<span id="cb31-181"><a href="#cb31-181" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-182"><a href="#cb31-182" aria-hidden="true" tabindex="-1"></a>Nota: Solo vamos a trabajar con las localidades con números de acceso de GeneBank. Las otras secuencias las obtuvieron de otra base de datos llamada BOLD.</span>
-<span id="cb31-183"><a href="#cb31-183" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-186"><a href="#cb31-186" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-187"><a href="#cb31-187" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
-<span id="cb31-188"><a href="#cb31-188" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-189"><a href="#cb31-189" aria-hidden="true" tabindex="-1"></a><span class="co"># H. americana - COI</span></span>
-<span id="cb31-190"><a href="#cb31-190" aria-hidden="true" tabindex="-1"></a><span class="co"># MH084732-MH084741, and MH090478-MH090669</span></span>
-<span id="cb31-191"><a href="#cb31-191" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-192"><a href="#cb31-192" aria-hidden="true" tabindex="-1"></a>acc1 <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;MH&quot;</span>, <span class="fu">sprintf</span>(<span class="st">&quot;%06d&quot;</span>, <span class="dv">84732</span><span class="sc">:</span><span class="dv">84741</span>))</span>
-<span id="cb31-193"><a href="#cb31-193" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-194"><a href="#cb31-194" aria-hidden="true" tabindex="-1"></a>acc2 <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;MH&quot;</span>, <span class="fu">sprintf</span>(<span class="st">&quot;%06d&quot;</span>, <span class="dv">90478</span><span class="sc">:</span><span class="dv">90669</span>))</span>
-<span id="cb31-195"><a href="#cb31-195" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-196"><a href="#cb31-196" aria-hidden="true" tabindex="-1"></a>acc_COI <span class="ot">&lt;-</span> <span class="fu">c</span>(acc1, acc2)</span>
-<span id="cb31-197"><a href="#cb31-197" aria-hidden="true" tabindex="-1"></a>acc_ITS <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;MH&quot;</span>, <span class="fu">sprintf</span>(<span class="st">&quot;%06d&quot;</span>, <span class="dv">90377</span><span class="sc">:</span><span class="dv">90477</span>))</span>
-<span id="cb31-198"><a href="#cb31-198" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-199"><a href="#cb31-199" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-200"><a href="#cb31-200" aria-hidden="true" tabindex="-1"></a>Para descargar secuencias de GeneBank se utiliza el paquete <span class="in">`rentrez`</span>. Necesitan crear una <span class="co">[</span><span class="ot">cuenta</span><span class="co">](https://www.ncbi.nlm.nih.gov/myncbi/)</span> en GeneBank para poder generar una clave API que les permita descargar las secuencias. </span>
-<span id="cb31-201"><a href="#cb31-201" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-204"><a href="#cb31-204" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-205"><a href="#cb31-205" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
-<span id="cb31-206"><a href="#cb31-206" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-207"><a href="#cb31-207" aria-hidden="true" tabindex="-1"></a>ncbi_key <span class="ot">&lt;-</span> <span class="fu">Sys.getenv</span>(<span class="st">&quot;NCBI_API_KEY&quot;</span>) <span class="co"># Ustedes pueden sustituir este codigo por ncbi_key &lt;- &quot;API_KEY&quot;</span></span>
-<span id="cb31-208"><a href="#cb31-208" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-209"><a href="#cb31-209" aria-hidden="true" tabindex="-1"></a>rentrez<span class="sc">::</span><span class="fu">set_entrez_key</span>(ncbi_key)</span>
-<span id="cb31-210"><a href="#cb31-210" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-211"><a href="#cb31-211" aria-hidden="true" tabindex="-1"></a>fasta_lote_COI <span class="ot">&lt;-</span> rentrez<span class="sc">::</span><span class="fu">entrez_fetch</span>(</span>
-<span id="cb31-212"><a href="#cb31-212" aria-hidden="true" tabindex="-1"></a>  <span class="at">db =</span> <span class="st">&quot;nucleotide&quot;</span>,</span>
-<span id="cb31-213"><a href="#cb31-213" aria-hidden="true" tabindex="-1"></a>  <span class="at">id =</span> acc_COI,</span>
-<span id="cb31-214"><a href="#cb31-214" aria-hidden="true" tabindex="-1"></a>  <span class="at">rettype =</span> <span class="st">&quot;fasta&quot;</span></span>
-<span id="cb31-215"><a href="#cb31-215" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb31-216"><a href="#cb31-216" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-217"><a href="#cb31-217" aria-hidden="true" tabindex="-1"></a><span class="fu">write</span>(</span>
-<span id="cb31-218"><a href="#cb31-218" aria-hidden="true" tabindex="-1"></a>  fasta_lote_COI,</span>
-<span id="cb31-219"><a href="#cb31-219" aria-hidden="true" tabindex="-1"></a>  <span class="at">file =</span> <span class="fu">file.path</span>(</span>
-<span id="cb31-220"><a href="#cb31-220" aria-hidden="true" tabindex="-1"></a>    <span class="fu">here</span>(),</span>
-<span id="cb31-221"><a href="#cb31-221" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;hetaerina_lab/00_raw_sequences/raw_H_americana_COI.fasta&quot;</span></span>
-<span id="cb31-222"><a href="#cb31-222" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb31-223"><a href="#cb31-223" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb31-224"><a href="#cb31-224" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-225"><a href="#cb31-225" aria-hidden="true" tabindex="-1"></a><span class="co"># Código por si quieren descargar las secuencias ITS y probar</span></span>
-<span id="cb31-226"><a href="#cb31-226" aria-hidden="true" tabindex="-1"></a><span class="co"># fasta_lote_ITS &lt;- rentrez::entrez_fetch(</span></span>
-<span id="cb31-227"><a href="#cb31-227" aria-hidden="true" tabindex="-1"></a><span class="co">#     db = &quot;nucleotide&quot;,</span></span>
-<span id="cb31-228"><a href="#cb31-228" aria-hidden="true" tabindex="-1"></a><span class="co">#     id = acc_ITS,</span></span>
-<span id="cb31-229"><a href="#cb31-229" aria-hidden="true" tabindex="-1"></a><span class="co">#     rettype = &quot;fasta&quot;</span></span>
-<span id="cb31-230"><a href="#cb31-230" aria-hidden="true" tabindex="-1"></a><span class="co"># )</span></span>
-<span id="cb31-231"><a href="#cb31-231" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-232"><a href="#cb31-232" aria-hidden="true" tabindex="-1"></a><span class="co"># write(</span></span>
-<span id="cb31-233"><a href="#cb31-233" aria-hidden="true" tabindex="-1"></a><span class="co">#   fasta_lote_ITS,</span></span>
-<span id="cb31-234"><a href="#cb31-234" aria-hidden="true" tabindex="-1"></a><span class="co">#   file = file.path(</span></span>
-<span id="cb31-235"><a href="#cb31-235" aria-hidden="true" tabindex="-1"></a><span class="co">#     here(),</span></span>
-<span id="cb31-236"><a href="#cb31-236" aria-hidden="true" tabindex="-1"></a><span class="co">#     &quot;hetaerina_lab/00_raw_sequences/raw_H_americana_ITS.fasta&quot;</span></span>
-<span id="cb31-237"><a href="#cb31-237" aria-hidden="true" tabindex="-1"></a><span class="co">#   )</span></span>
-<span id="cb31-238"><a href="#cb31-238" aria-hidden="true" tabindex="-1"></a><span class="co"># )</span></span>
-<span id="cb31-239"><a href="#cb31-239" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-240"><a href="#cb31-240" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-241"><a href="#cb31-241" aria-hidden="true" tabindex="-1"></a><span class="fu">### Descargar metadatos</span></span>
-<span id="cb31-242"><a href="#cb31-242" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-157"><a href="#cb31-157" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-160"><a href="#cb31-160" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-161"><a href="#cb31-161" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: crear-directorios</span></span>
+<span id="cb31-162"><a href="#cb31-162" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
+<span id="cb31-163"><a href="#cb31-163" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-164"><a href="#cb31-164" aria-hidden="true" tabindex="-1"></a><span class="co"># Crear estructura de carpetas del proyecto</span></span>
+<span id="cb31-165"><a href="#cb31-165" aria-hidden="true" tabindex="-1"></a>dirs <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb31-166"><a href="#cb31-166" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;hetaerina_lab/00_raw_sequences&quot;</span>,</span>
+<span id="cb31-167"><a href="#cb31-167" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;hetaerina_lab/01_metadata&quot;</span>,</span>
+<span id="cb31-168"><a href="#cb31-168" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;hetaerina_lab/02_aligned&quot;</span>,</span>
+<span id="cb31-169"><a href="#cb31-169" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;hetaerina_lab/03_outputs&quot;</span></span>
+<span id="cb31-170"><a href="#cb31-170" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-171"><a href="#cb31-171" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-172"><a href="#cb31-172" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (d <span class="cf">in</span> dirs) {</span>
+<span id="cb31-173"><a href="#cb31-173" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">dir.exists</span>(d)) <span class="fu">dir.create</span>(d, <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb31-174"><a href="#cb31-174" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb31-175"><a href="#cb31-175" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb31-176"><a href="#cb31-176" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-177"><a href="#cb31-177" aria-hidden="true" tabindex="-1"></a><span class="fu">## Descarga de los datos</span></span>
+<span id="cb31-178"><a href="#cb31-178" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-179"><a href="#cb31-179" aria-hidden="true" tabindex="-1"></a>En el material suplementario del artículo, en la tabla S1 podemos encontrar los números de acceso de las secuencias COI e ITS de las libélulas </span>
+<span id="cb31-180"><a href="#cb31-180" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-181"><a href="#cb31-181" aria-hidden="true" tabindex="-1"></a>Primero vamos a generar un vector con todos los números de acceso de *H. americana* </span>
+<span id="cb31-182"><a href="#cb31-182" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-183"><a href="#cb31-183" aria-hidden="true" tabindex="-1"></a>Nota: Solo vamos a trabajar con las localidades con números de acceso de GeneBank. Las otras secuencias las obtuvieron de otra base de datos llamada BOLD.</span>
+<span id="cb31-184"><a href="#cb31-184" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-187"><a href="#cb31-187" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-188"><a href="#cb31-188" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
+<span id="cb31-189"><a href="#cb31-189" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-190"><a href="#cb31-190" aria-hidden="true" tabindex="-1"></a><span class="co"># H. americana - COI</span></span>
+<span id="cb31-191"><a href="#cb31-191" aria-hidden="true" tabindex="-1"></a><span class="co"># MH084732-MH084741, and MH090478-MH090669</span></span>
+<span id="cb31-192"><a href="#cb31-192" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-193"><a href="#cb31-193" aria-hidden="true" tabindex="-1"></a>acc1 <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;MH&quot;</span>, <span class="fu">sprintf</span>(<span class="st">&quot;%06d&quot;</span>, <span class="dv">84732</span><span class="sc">:</span><span class="dv">84741</span>))</span>
+<span id="cb31-194"><a href="#cb31-194" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-195"><a href="#cb31-195" aria-hidden="true" tabindex="-1"></a>acc2 <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;MH&quot;</span>, <span class="fu">sprintf</span>(<span class="st">&quot;%06d&quot;</span>, <span class="dv">90478</span><span class="sc">:</span><span class="dv">90669</span>))</span>
+<span id="cb31-196"><a href="#cb31-196" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-197"><a href="#cb31-197" aria-hidden="true" tabindex="-1"></a>acc_COI <span class="ot">&lt;-</span> <span class="fu">c</span>(acc1, acc2)</span>
+<span id="cb31-198"><a href="#cb31-198" aria-hidden="true" tabindex="-1"></a>acc_ITS <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;MH&quot;</span>, <span class="fu">sprintf</span>(<span class="st">&quot;%06d&quot;</span>, <span class="dv">90377</span><span class="sc">:</span><span class="dv">90477</span>))</span>
+<span id="cb31-199"><a href="#cb31-199" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb31-200"><a href="#cb31-200" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-201"><a href="#cb31-201" aria-hidden="true" tabindex="-1"></a>Para descargar secuencias de GeneBank se utiliza el paquete <span class="in">`rentrez`</span>. Necesitan crear una <span class="co">[</span><span class="ot">cuenta</span><span class="co">](https://www.ncbi.nlm.nih.gov/myncbi/)</span> en GeneBank para poder generar una clave API que les permita descargar las secuencias. </span>
+<span id="cb31-202"><a href="#cb31-202" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-205"><a href="#cb31-205" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-206"><a href="#cb31-206" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
+<span id="cb31-207"><a href="#cb31-207" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-208"><a href="#cb31-208" aria-hidden="true" tabindex="-1"></a>ncbi_key <span class="ot">&lt;-</span> <span class="fu">Sys.getenv</span>(<span class="st">&quot;NCBI_API_KEY&quot;</span>) <span class="co"># Ustedes pueden sustituir este codigo por ncbi_key &lt;- &quot;API_KEY&quot;</span></span>
+<span id="cb31-209"><a href="#cb31-209" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-210"><a href="#cb31-210" aria-hidden="true" tabindex="-1"></a>rentrez<span class="sc">::</span><span class="fu">set_entrez_key</span>(ncbi_key)</span>
+<span id="cb31-211"><a href="#cb31-211" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-212"><a href="#cb31-212" aria-hidden="true" tabindex="-1"></a>fasta_lote_COI <span class="ot">&lt;-</span> rentrez<span class="sc">::</span><span class="fu">entrez_fetch</span>(</span>
+<span id="cb31-213"><a href="#cb31-213" aria-hidden="true" tabindex="-1"></a>  <span class="at">db =</span> <span class="st">&quot;nucleotide&quot;</span>,</span>
+<span id="cb31-214"><a href="#cb31-214" aria-hidden="true" tabindex="-1"></a>  <span class="at">id =</span> acc_COI,</span>
+<span id="cb31-215"><a href="#cb31-215" aria-hidden="true" tabindex="-1"></a>  <span class="at">rettype =</span> <span class="st">&quot;fasta&quot;</span></span>
+<span id="cb31-216"><a href="#cb31-216" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-217"><a href="#cb31-217" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-218"><a href="#cb31-218" aria-hidden="true" tabindex="-1"></a><span class="fu">write</span>(</span>
+<span id="cb31-219"><a href="#cb31-219" aria-hidden="true" tabindex="-1"></a>  fasta_lote_COI,</span>
+<span id="cb31-220"><a href="#cb31-220" aria-hidden="true" tabindex="-1"></a>  <span class="at">file =</span> <span class="fu">file.path</span>(</span>
+<span id="cb31-221"><a href="#cb31-221" aria-hidden="true" tabindex="-1"></a>    <span class="fu">here</span>(),</span>
+<span id="cb31-222"><a href="#cb31-222" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;hetaerina_lab/00_raw_sequences/raw_H_americana_COI.fasta&quot;</span></span>
+<span id="cb31-223"><a href="#cb31-223" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb31-224"><a href="#cb31-224" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-225"><a href="#cb31-225" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-226"><a href="#cb31-226" aria-hidden="true" tabindex="-1"></a><span class="co"># Código por si quieren descargar las secuencias ITS y probar</span></span>
+<span id="cb31-227"><a href="#cb31-227" aria-hidden="true" tabindex="-1"></a><span class="co"># fasta_lote_ITS &lt;- rentrez::entrez_fetch(</span></span>
+<span id="cb31-228"><a href="#cb31-228" aria-hidden="true" tabindex="-1"></a><span class="co">#     db = &quot;nucleotide&quot;,</span></span>
+<span id="cb31-229"><a href="#cb31-229" aria-hidden="true" tabindex="-1"></a><span class="co">#     id = acc_ITS,</span></span>
+<span id="cb31-230"><a href="#cb31-230" aria-hidden="true" tabindex="-1"></a><span class="co">#     rettype = &quot;fasta&quot;</span></span>
+<span id="cb31-231"><a href="#cb31-231" aria-hidden="true" tabindex="-1"></a><span class="co"># )</span></span>
+<span id="cb31-232"><a href="#cb31-232" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-233"><a href="#cb31-233" aria-hidden="true" tabindex="-1"></a><span class="co"># write(</span></span>
+<span id="cb31-234"><a href="#cb31-234" aria-hidden="true" tabindex="-1"></a><span class="co">#   fasta_lote_ITS,</span></span>
+<span id="cb31-235"><a href="#cb31-235" aria-hidden="true" tabindex="-1"></a><span class="co">#   file = file.path(</span></span>
+<span id="cb31-236"><a href="#cb31-236" aria-hidden="true" tabindex="-1"></a><span class="co">#     here(),</span></span>
+<span id="cb31-237"><a href="#cb31-237" aria-hidden="true" tabindex="-1"></a><span class="co">#     &quot;hetaerina_lab/00_raw_sequences/raw_H_americana_ITS.fasta&quot;</span></span>
+<span id="cb31-238"><a href="#cb31-238" aria-hidden="true" tabindex="-1"></a><span class="co">#   )</span></span>
+<span id="cb31-239"><a href="#cb31-239" aria-hidden="true" tabindex="-1"></a><span class="co"># )</span></span>
+<span id="cb31-240"><a href="#cb31-240" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb31-241"><a href="#cb31-241" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-242"><a href="#cb31-242" aria-hidden="true" tabindex="-1"></a><span class="fu">### Descargar metadatos</span></span>
 <span id="cb31-243"><a href="#cb31-243" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-246"><a href="#cb31-246" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-247"><a href="#cb31-247" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
-<span id="cb31-248"><a href="#cb31-248" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-249"><a href="#cb31-249" aria-hidden="true" tabindex="-1"></a>metadatos_COI_raw <span class="ot">&lt;-</span> rentrez<span class="sc">::</span><span class="fu">entrez_summary</span>(<span class="at">db =</span> <span class="st">&quot;nucleotide&quot;</span>, <span class="at">id =</span> acc_COI)</span>
-<span id="cb31-250"><a href="#cb31-250" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-251"><a href="#cb31-251" aria-hidden="true" tabindex="-1"></a>metadata_COI_ls <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
-<span id="cb31-252"><a href="#cb31-252" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-253"><a href="#cb31-253" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (rec <span class="cf">in</span> metadatos_COI_raw) {</span>
-<span id="cb31-254"><a href="#cb31-254" aria-hidden="true" tabindex="-1"></a>  metadata_COI_ls[[rec<span class="sc">$</span>uid]] <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb31-255"><a href="#cb31-255" aria-hidden="true" tabindex="-1"></a>    <span class="at">accession =</span> rec<span class="sc">$</span>accessionversion, <span class="co"># Numero de acceso</span></span>
-<span id="cb31-256"><a href="#cb31-256" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> rec<span class="sc">$</span>title, <span class="co"># encabezado de la secuencia</span></span>
-<span id="cb31-257"><a href="#cb31-257" aria-hidden="true" tabindex="-1"></a>    <span class="at">taxid =</span> rec<span class="sc">$</span>taxid, <span class="co"># id de la especie</span></span>
-<span id="cb31-258"><a href="#cb31-258" aria-hidden="true" tabindex="-1"></a>    <span class="at">slen =</span> rec<span class="sc">$</span>slen, <span class="co"># longitud de la secuencia</span></span>
-<span id="cb31-259"><a href="#cb31-259" aria-hidden="true" tabindex="-1"></a>    <span class="at">organism =</span> rec<span class="sc">$</span>organism <span class="co"># nombre del organismo</span></span>
-<span id="cb31-260"><a href="#cb31-260" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb31-261"><a href="#cb31-261" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb31-262"><a href="#cb31-262" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-263"><a href="#cb31-263" aria-hidden="true" tabindex="-1"></a>metadata_COI <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(metadata_COI_ls)</span>
-<span id="cb31-264"><a href="#cb31-264" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-265"><a href="#cb31-265" aria-hidden="true" tabindex="-1"></a>metadata_COI <span class="ot">&lt;-</span> <span class="fu">mutate</span>(</span>
-<span id="cb31-266"><a href="#cb31-266" aria-hidden="true" tabindex="-1"></a>  metadata_COI,</span>
-<span id="cb31-267"><a href="#cb31-267" aria-hidden="true" tabindex="-1"></a>  <span class="at">locCode =</span> <span class="fu">str_extract</span>(title, <span class="st">&quot;(?&lt;=Ham)[:alpha:]{1,}&quot;</span>),</span>
-<span id="cb31-268"><a href="#cb31-268" aria-hidden="true" tabindex="-1"></a>  <span class="at">sampleID =</span> <span class="fu">as.numeric</span>(<span class="fu">str_extract</span>(title, <span class="st">&quot;(?&lt;=Ham[[:alpha:]]{1,3})</span><span class="sc">\\</span><span class="st">d{1,}&quot;</span>)),</span>
-<span id="cb31-269"><a href="#cb31-269" aria-hidden="true" tabindex="-1"></a>  <span class="at">sampleID =</span> <span class="fu">sprintf</span>(<span class="st">&quot;%02d&quot;</span>, sampleID)</span>
-<span id="cb31-270"><a href="#cb31-270" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb31-271"><a href="#cb31-271" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-272"><a href="#cb31-272" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-244"><a href="#cb31-244" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-247"><a href="#cb31-247" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-248"><a href="#cb31-248" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
+<span id="cb31-249"><a href="#cb31-249" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-250"><a href="#cb31-250" aria-hidden="true" tabindex="-1"></a>metadatos_COI_raw <span class="ot">&lt;-</span> rentrez<span class="sc">::</span><span class="fu">entrez_summary</span>(<span class="at">db =</span> <span class="st">&quot;nucleotide&quot;</span>, <span class="at">id =</span> acc_COI)</span>
+<span id="cb31-251"><a href="#cb31-251" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-252"><a href="#cb31-252" aria-hidden="true" tabindex="-1"></a>metadata_COI_ls <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb31-253"><a href="#cb31-253" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-254"><a href="#cb31-254" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (rec <span class="cf">in</span> metadatos_COI_raw) {</span>
+<span id="cb31-255"><a href="#cb31-255" aria-hidden="true" tabindex="-1"></a>  metadata_COI_ls[[rec<span class="sc">$</span>uid]] <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb31-256"><a href="#cb31-256" aria-hidden="true" tabindex="-1"></a>    <span class="at">accession =</span> rec<span class="sc">$</span>accessionversion, <span class="co"># Numero de acceso</span></span>
+<span id="cb31-257"><a href="#cb31-257" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> rec<span class="sc">$</span>title, <span class="co"># encabezado de la secuencia</span></span>
+<span id="cb31-258"><a href="#cb31-258" aria-hidden="true" tabindex="-1"></a>    <span class="at">taxid =</span> rec<span class="sc">$</span>taxid, <span class="co"># id de la especie</span></span>
+<span id="cb31-259"><a href="#cb31-259" aria-hidden="true" tabindex="-1"></a>    <span class="at">slen =</span> rec<span class="sc">$</span>slen, <span class="co"># longitud de la secuencia</span></span>
+<span id="cb31-260"><a href="#cb31-260" aria-hidden="true" tabindex="-1"></a>    <span class="at">organism =</span> rec<span class="sc">$</span>organism <span class="co"># nombre del organismo</span></span>
+<span id="cb31-261"><a href="#cb31-261" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb31-262"><a href="#cb31-262" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb31-263"><a href="#cb31-263" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-264"><a href="#cb31-264" aria-hidden="true" tabindex="-1"></a>metadata_COI <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(metadata_COI_ls)</span>
+<span id="cb31-265"><a href="#cb31-265" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-266"><a href="#cb31-266" aria-hidden="true" tabindex="-1"></a>metadata_COI <span class="ot">&lt;-</span> <span class="fu">mutate</span>(</span>
+<span id="cb31-267"><a href="#cb31-267" aria-hidden="true" tabindex="-1"></a>  metadata_COI,</span>
+<span id="cb31-268"><a href="#cb31-268" aria-hidden="true" tabindex="-1"></a>  <span class="at">locCode =</span> <span class="fu">str_extract</span>(title, <span class="st">&quot;(?&lt;=Ham)[:alpha:]{1,}&quot;</span>),</span>
+<span id="cb31-269"><a href="#cb31-269" aria-hidden="true" tabindex="-1"></a>  <span class="at">sampleID =</span> <span class="fu">as.numeric</span>(<span class="fu">str_extract</span>(title, <span class="st">&quot;(?&lt;=Ham[[:alpha:]]{1,3})</span><span class="sc">\\</span><span class="st">d{1,}&quot;</span>)),</span>
+<span id="cb31-270"><a href="#cb31-270" aria-hidden="true" tabindex="-1"></a>  <span class="at">sampleID =</span> <span class="fu">sprintf</span>(<span class="st">&quot;%02d&quot;</span>, sampleID)</span>
+<span id="cb31-271"><a href="#cb31-271" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-272"><a href="#cb31-272" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb31-273"><a href="#cb31-273" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb31-274"><a href="#cb31-274" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-275"><a href="#cb31-275" aria-hidden="true" tabindex="-1"></a><span class="fu">### Unir metadatos geográficos</span></span>
-<span id="cb31-276"><a href="#cb31-276" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-279"><a href="#cb31-279" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-280"><a href="#cb31-280" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
-<span id="cb31-281"><a href="#cb31-281" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-282"><a href="#cb31-282" aria-hidden="true" tabindex="-1"></a><span class="do">## Datos geograficos</span></span>
-<span id="cb31-283"><a href="#cb31-283" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-284"><a href="#cb31-284" aria-hidden="true" tabindex="-1"></a>geo_data <span class="ot">&lt;-</span> <span class="fu">read.table</span>(</span>
-<span id="cb31-285"><a href="#cb31-285" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;hetaerina_lab/01_metadata/metadata_geo.tsv&quot;</span>,</span>
-<span id="cb31-286"><a href="#cb31-286" aria-hidden="true" tabindex="-1"></a>  <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">&quot;</span>,</span>
-<span id="cb31-287"><a href="#cb31-287" aria-hidden="true" tabindex="-1"></a>  <span class="at">header =</span> T</span>
-<span id="cb31-288"><a href="#cb31-288" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb31-289"><a href="#cb31-289" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-290"><a href="#cb31-290" aria-hidden="true" tabindex="-1"></a>metadata_COI <span class="ot">&lt;-</span> metadata_COI <span class="sc">|&gt;</span> <span class="fu">left_join</span>(geo_data, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;locCode&quot;</span> <span class="ot">=</span> <span class="st">&quot;Code&quot;</span>))</span>
-<span id="cb31-291"><a href="#cb31-291" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-292"><a href="#cb31-292" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(</span>
-<span id="cb31-293"><a href="#cb31-293" aria-hidden="true" tabindex="-1"></a>  metadata_COI,</span>
-<span id="cb31-294"><a href="#cb31-294" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;hetaerina_lab/01_metadata/metadata_COI.csv&quot;</span>,</span>
-<span id="cb31-295"><a href="#cb31-295" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> F</span>
-<span id="cb31-296"><a href="#cb31-296" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb31-297"><a href="#cb31-297" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-298"><a href="#cb31-298" aria-hidden="true" tabindex="-1"></a>metadata_ITS <span class="ot">&lt;-</span> metadata_ITS <span class="sc">|&gt;</span> <span class="fu">left_join</span>(geo_data, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;locCode&quot;</span> <span class="ot">=</span> <span class="st">&quot;Code&quot;</span>))</span>
-<span id="cb31-299"><a href="#cb31-299" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-300"><a href="#cb31-300" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(</span>
-<span id="cb31-301"><a href="#cb31-301" aria-hidden="true" tabindex="-1"></a>  metadata_ITS,</span>
-<span id="cb31-302"><a href="#cb31-302" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;hetaerina_lab/01_metadata/metadata_ITS.csv&quot;</span>,</span>
-<span id="cb31-303"><a href="#cb31-303" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> F</span>
-<span id="cb31-304"><a href="#cb31-304" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb31-305"><a href="#cb31-305" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-306"><a href="#cb31-306" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-275"><a href="#cb31-275" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-276"><a href="#cb31-276" aria-hidden="true" tabindex="-1"></a><span class="fu">### Unir metadatos geográficos</span></span>
+<span id="cb31-277"><a href="#cb31-277" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-280"><a href="#cb31-280" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-281"><a href="#cb31-281" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
+<span id="cb31-282"><a href="#cb31-282" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-283"><a href="#cb31-283" aria-hidden="true" tabindex="-1"></a><span class="do">## Datos geograficos</span></span>
+<span id="cb31-284"><a href="#cb31-284" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-285"><a href="#cb31-285" aria-hidden="true" tabindex="-1"></a>geo_data <span class="ot">&lt;-</span> <span class="fu">read.table</span>(</span>
+<span id="cb31-286"><a href="#cb31-286" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;hetaerina_lab/01_metadata/metadata_geo.tsv&quot;</span>,</span>
+<span id="cb31-287"><a href="#cb31-287" aria-hidden="true" tabindex="-1"></a>  <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">&quot;</span>,</span>
+<span id="cb31-288"><a href="#cb31-288" aria-hidden="true" tabindex="-1"></a>  <span class="at">header =</span> T</span>
+<span id="cb31-289"><a href="#cb31-289" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-290"><a href="#cb31-290" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-291"><a href="#cb31-291" aria-hidden="true" tabindex="-1"></a>metadata_COI <span class="ot">&lt;-</span> metadata_COI <span class="sc">|&gt;</span> <span class="fu">left_join</span>(geo_data, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;locCode&quot;</span> <span class="ot">=</span> <span class="st">&quot;Code&quot;</span>))</span>
+<span id="cb31-292"><a href="#cb31-292" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-293"><a href="#cb31-293" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(</span>
+<span id="cb31-294"><a href="#cb31-294" aria-hidden="true" tabindex="-1"></a>  metadata_COI,</span>
+<span id="cb31-295"><a href="#cb31-295" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;hetaerina_lab/01_metadata/metadata_COI.csv&quot;</span>,</span>
+<span id="cb31-296"><a href="#cb31-296" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> F</span>
+<span id="cb31-297"><a href="#cb31-297" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-298"><a href="#cb31-298" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-299"><a href="#cb31-299" aria-hidden="true" tabindex="-1"></a>metadata_ITS <span class="ot">&lt;-</span> metadata_ITS <span class="sc">|&gt;</span> <span class="fu">left_join</span>(geo_data, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;locCode&quot;</span> <span class="ot">=</span> <span class="st">&quot;Code&quot;</span>))</span>
+<span id="cb31-300"><a href="#cb31-300" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-301"><a href="#cb31-301" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(</span>
+<span id="cb31-302"><a href="#cb31-302" aria-hidden="true" tabindex="-1"></a>  metadata_ITS,</span>
+<span id="cb31-303"><a href="#cb31-303" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;hetaerina_lab/01_metadata/metadata_ITS.csv&quot;</span>,</span>
+<span id="cb31-304"><a href="#cb31-304" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> F</span>
+<span id="cb31-305"><a href="#cb31-305" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-306"><a href="#cb31-306" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb31-307"><a href="#cb31-307" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-308"><a href="#cb31-308" aria-hidden="true" tabindex="-1"></a><span class="fu">## Alineamiento</span></span>
-<span id="cb31-309"><a href="#cb31-309" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-308"><a href="#cb31-308" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-309"><a href="#cb31-309" aria-hidden="true" tabindex="-1"></a><span class="fu">## Alineamiento</span></span>
 <span id="cb31-310"><a href="#cb31-310" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-313"><a href="#cb31-313" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-314"><a href="#cb31-314" aria-hidden="true" tabindex="-1"></a>coi <span class="ot">&lt;-</span> Biostrings<span class="sc">::</span><span class="fu">readDNAStringSet</span>(<span class="st">&quot;hetaerina_lab/00_raw_sequences/raw_H_americana_COI.fasta&quot;</span>)</span>
-<span id="cb31-315"><a href="#cb31-315" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-316"><a href="#cb31-316" aria-hidden="true" tabindex="-1"></a><span class="co"># Ejecutar MUSCLE a través del paquete msa</span></span>
-<span id="cb31-317"><a href="#cb31-317" aria-hidden="true" tabindex="-1"></a>coiAlign <span class="ot">&lt;-</span> msa<span class="sc">::</span><span class="fu">msa</span>(</span>
-<span id="cb31-318"><a href="#cb31-318" aria-hidden="true" tabindex="-1"></a>  <span class="at">inputSeqs =</span> coi,</span>
-<span id="cb31-319"><a href="#cb31-319" aria-hidden="true" tabindex="-1"></a>  <span class="at">method    =</span> <span class="st">&quot;Muscle&quot;</span>,  <span class="co"># Alternativas: &quot;ClustalW&quot;, &quot;ClustalOmega&quot;</span></span>
-<span id="cb31-320"><a href="#cb31-320" aria-hidden="true" tabindex="-1"></a>  <span class="at">verbose   =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb31-321"><a href="#cb31-321" aria-hidden="true" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">&quot;dna&quot;</span></span>
-<span id="cb31-322"><a href="#cb31-322" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb31-323"><a href="#cb31-323" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-324"><a href="#cb31-324" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-325"><a href="#cb31-325" aria-hidden="true" tabindex="-1"></a><span class="fu">## Inspección visual del alineamiento</span></span>
-<span id="cb31-326"><a href="#cb31-326" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-329"><a href="#cb31-329" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-330"><a href="#cb31-330" aria-hidden="true" tabindex="-1"></a>coiAlign_dnaBin <span class="ot">&lt;-</span> msa<span class="sc">::</span><span class="fu">msaConvert</span>(coiAlign, <span class="at">type =</span> <span class="st">&quot;ape::DNAbin&quot;</span>)</span>
-<span id="cb31-331"><a href="#cb31-331" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(coiAlign_dnaBin) <span class="ot">&lt;-</span> <span class="fu">str_extract</span>(</span>
-<span id="cb31-332"><a href="#cb31-332" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rownames</span>(coiAlign_dnaBin),</span>
-<span id="cb31-333"><a href="#cb31-333" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Ham</span><span class="sc">\\</span><span class="st">w{1,}</span><span class="sc">\\</span><span class="st">d{1,}&quot;</span></span>
-<span id="cb31-334"><a href="#cb31-334" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb31-335"><a href="#cb31-335" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-336"><a href="#cb31-336" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-339"><a href="#cb31-339" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-340"><a href="#cb31-340" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
-<span id="cb31-341"><a href="#cb31-341" aria-hidden="true" tabindex="-1"></a><span class="fu">pdf</span>(<span class="st">&quot;hetaerina_lab/03_outputs/alignment_check.pdf&quot;</span>, <span class="at">width =</span> <span class="dv">10</span>, <span class="at">height =</span> <span class="dv">7</span>, )</span>
-<span id="cb31-342"><a href="#cb31-342" aria-hidden="true" tabindex="-1"></a>  ape<span class="sc">::</span><span class="fu">checkAlignment</span>(coiAlign_dnaBin, <span class="at">what =</span> <span class="dv">1</span>)</span>
-<span id="cb31-343"><a href="#cb31-343" aria-hidden="true" tabindex="-1"></a>  ape<span class="sc">::</span><span class="fu">checkAlignment</span>(coiAlign_dnaBin, <span class="at">what =</span> <span class="dv">2</span>)</span>
-<span id="cb31-344"><a href="#cb31-344" aria-hidden="true" tabindex="-1"></a>  ape<span class="sc">::</span><span class="fu">checkAlignment</span>(coiAlign_dnaBin, <span class="at">what =</span> <span class="dv">3</span>)</span>
-<span id="cb31-345"><a href="#cb31-345" aria-hidden="true" tabindex="-1"></a>  ape<span class="sc">::</span><span class="fu">checkAlignment</span>(coiAlign_dnaBin, <span class="at">what =</span> <span class="dv">4</span>)</span>
-<span id="cb31-346"><a href="#cb31-346" aria-hidden="true" tabindex="-1"></a><span class="fu">dev.off</span>()</span>
-<span id="cb31-347"><a href="#cb31-347" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-348"><a href="#cb31-348" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-349"><a href="#cb31-349" aria-hidden="true" tabindex="-1"></a>Recortar partes de las secuencias que tienen muchos datos faltantes</span>
-<span id="cb31-350"><a href="#cb31-350" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-353"><a href="#cb31-353" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-354"><a href="#cb31-354" aria-hidden="true" tabindex="-1"></a><span class="co"># Porcentaje de gaps por posición</span></span>
-<span id="cb31-355"><a href="#cb31-355" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-356"><a href="#cb31-356" aria-hidden="true" tabindex="-1"></a>aln_matrix <span class="ot">&lt;-</span> <span class="fu">as.character</span>(coiAlign_dnaBin)</span>
-<span id="cb31-357"><a href="#cb31-357" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-358"><a href="#cb31-358" aria-hidden="true" tabindex="-1"></a>gaps_por_col <span class="ot">&lt;-</span> <span class="fu">apply</span>(aln_matrix, <span class="dv">2</span>, <span class="cf">function</span>(col) {</span>
-<span id="cb31-359"><a href="#cb31-359" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>(col <span class="sc">==</span> <span class="st">&quot;-&quot;</span> <span class="sc">|</span> col <span class="sc">==</span> <span class="st">&quot;n&quot;</span>) <span class="sc">*</span> <span class="dv">100</span></span>
-<span id="cb31-360"><a href="#cb31-360" aria-hidden="true" tabindex="-1"></a>})</span>
-<span id="cb31-361"><a href="#cb31-361" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-362"><a href="#cb31-362" aria-hidden="true" tabindex="-1"></a>cols_conservar <span class="ot">&lt;-</span> <span class="fu">which</span>(gaps_por_col <span class="sc">&lt;</span> <span class="dv">50</span>)</span>
-<span id="cb31-363"><a href="#cb31-363" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-364"><a href="#cb31-364" aria-hidden="true" tabindex="-1"></a>coiAlign_trim <span class="ot">&lt;-</span> coiAlign_dnaBin[, cols_conservar]</span>
-<span id="cb31-365"><a href="#cb31-365" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-366"><a href="#cb31-366" aria-hidden="true" tabindex="-1"></a>ape<span class="sc">::</span><span class="fu">write.dna</span>(</span>
-<span id="cb31-367"><a href="#cb31-367" aria-hidden="true" tabindex="-1"></a>  coiAlign_trim,</span>
-<span id="cb31-368"><a href="#cb31-368" aria-hidden="true" tabindex="-1"></a>  <span class="at">file =</span> <span class="st">&quot;hetaerina_lab/02_aligned/alignment_coi_trimmed.fasta&quot;</span>,</span>
-<span id="cb31-369"><a href="#cb31-369" aria-hidden="true" tabindex="-1"></a>  <span class="at">format =</span> <span class="st">&quot;fasta&quot;</span></span>
-<span id="cb31-370"><a href="#cb31-370" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb31-371"><a href="#cb31-371" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-372"><a href="#cb31-372" aria-hidden="true" tabindex="-1"></a>ape<span class="sc">::</span><span class="fu">checkAlignment</span>(coiAlign_trim, <span class="at">what =</span> <span class="dv">1</span>)</span>
-<span id="cb31-373"><a href="#cb31-373" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-374"><a href="#cb31-374" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-375"><a href="#cb31-375" aria-hidden="true" tabindex="-1"></a><span class="fu">## Transformación de datos</span></span>
-<span id="cb31-376"><a href="#cb31-376" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-377"><a href="#cb31-377" aria-hidden="true" tabindex="-1"></a>Recuperamos los haplotipos del alineamiento</span>
-<span id="cb31-378"><a href="#cb31-378" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-311"><a href="#cb31-311" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-314"><a href="#cb31-314" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-315"><a href="#cb31-315" aria-hidden="true" tabindex="-1"></a>coi <span class="ot">&lt;-</span> Biostrings<span class="sc">::</span><span class="fu">readDNAStringSet</span>(<span class="st">&quot;hetaerina_lab/00_raw_sequences/raw_H_americana_COI.fasta&quot;</span>)</span>
+<span id="cb31-316"><a href="#cb31-316" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-317"><a href="#cb31-317" aria-hidden="true" tabindex="-1"></a><span class="co"># Ejecutar MUSCLE a través del paquete msa</span></span>
+<span id="cb31-318"><a href="#cb31-318" aria-hidden="true" tabindex="-1"></a>coiAlign <span class="ot">&lt;-</span> msa<span class="sc">::</span><span class="fu">msa</span>(</span>
+<span id="cb31-319"><a href="#cb31-319" aria-hidden="true" tabindex="-1"></a>  <span class="at">inputSeqs =</span> coi,</span>
+<span id="cb31-320"><a href="#cb31-320" aria-hidden="true" tabindex="-1"></a>  <span class="at">method    =</span> <span class="st">&quot;Muscle&quot;</span>,  <span class="co"># Alternativas: &quot;ClustalW&quot;, &quot;ClustalOmega&quot;</span></span>
+<span id="cb31-321"><a href="#cb31-321" aria-hidden="true" tabindex="-1"></a>  <span class="at">verbose   =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb31-322"><a href="#cb31-322" aria-hidden="true" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">&quot;dna&quot;</span></span>
+<span id="cb31-323"><a href="#cb31-323" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-324"><a href="#cb31-324" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb31-325"><a href="#cb31-325" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-326"><a href="#cb31-326" aria-hidden="true" tabindex="-1"></a><span class="fu">## Inspección visual del alineamiento</span></span>
+<span id="cb31-327"><a href="#cb31-327" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-330"><a href="#cb31-330" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-331"><a href="#cb31-331" aria-hidden="true" tabindex="-1"></a>coiAlign_dnaBin <span class="ot">&lt;-</span> msa<span class="sc">::</span><span class="fu">msaConvert</span>(coiAlign, <span class="at">type =</span> <span class="st">&quot;ape::DNAbin&quot;</span>)</span>
+<span id="cb31-332"><a href="#cb31-332" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(coiAlign_dnaBin) <span class="ot">&lt;-</span> <span class="fu">str_extract</span>(</span>
+<span id="cb31-333"><a href="#cb31-333" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rownames</span>(coiAlign_dnaBin),</span>
+<span id="cb31-334"><a href="#cb31-334" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Ham</span><span class="sc">\\</span><span class="st">w{1,}</span><span class="sc">\\</span><span class="st">d{1,}&quot;</span></span>
+<span id="cb31-335"><a href="#cb31-335" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-336"><a href="#cb31-336" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb31-337"><a href="#cb31-337" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-340"><a href="#cb31-340" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-341"><a href="#cb31-341" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
+<span id="cb31-342"><a href="#cb31-342" aria-hidden="true" tabindex="-1"></a><span class="fu">pdf</span>(<span class="st">&quot;hetaerina_lab/03_outputs/alignment_check.pdf&quot;</span>, <span class="at">width =</span> <span class="dv">10</span>, <span class="at">height =</span> <span class="dv">7</span>, )</span>
+<span id="cb31-343"><a href="#cb31-343" aria-hidden="true" tabindex="-1"></a>  ape<span class="sc">::</span><span class="fu">checkAlignment</span>(coiAlign_dnaBin, <span class="at">what =</span> <span class="dv">1</span>)</span>
+<span id="cb31-344"><a href="#cb31-344" aria-hidden="true" tabindex="-1"></a>  ape<span class="sc">::</span><span class="fu">checkAlignment</span>(coiAlign_dnaBin, <span class="at">what =</span> <span class="dv">2</span>)</span>
+<span id="cb31-345"><a href="#cb31-345" aria-hidden="true" tabindex="-1"></a>  ape<span class="sc">::</span><span class="fu">checkAlignment</span>(coiAlign_dnaBin, <span class="at">what =</span> <span class="dv">3</span>)</span>
+<span id="cb31-346"><a href="#cb31-346" aria-hidden="true" tabindex="-1"></a>  ape<span class="sc">::</span><span class="fu">checkAlignment</span>(coiAlign_dnaBin, <span class="at">what =</span> <span class="dv">4</span>)</span>
+<span id="cb31-347"><a href="#cb31-347" aria-hidden="true" tabindex="-1"></a><span class="fu">dev.off</span>()</span>
+<span id="cb31-348"><a href="#cb31-348" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb31-349"><a href="#cb31-349" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-350"><a href="#cb31-350" aria-hidden="true" tabindex="-1"></a>Recortar partes de las secuencias que tienen muchos datos faltantes</span>
+<span id="cb31-351"><a href="#cb31-351" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-354"><a href="#cb31-354" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-355"><a href="#cb31-355" aria-hidden="true" tabindex="-1"></a><span class="co"># Porcentaje de gaps por posición</span></span>
+<span id="cb31-356"><a href="#cb31-356" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-357"><a href="#cb31-357" aria-hidden="true" tabindex="-1"></a>aln_matrix <span class="ot">&lt;-</span> <span class="fu">as.character</span>(coiAlign_dnaBin)</span>
+<span id="cb31-358"><a href="#cb31-358" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-359"><a href="#cb31-359" aria-hidden="true" tabindex="-1"></a>gaps_por_col <span class="ot">&lt;-</span> <span class="fu">apply</span>(aln_matrix, <span class="dv">2</span>, <span class="cf">function</span>(col) {</span>
+<span id="cb31-360"><a href="#cb31-360" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>(col <span class="sc">==</span> <span class="st">&quot;-&quot;</span> <span class="sc">|</span> col <span class="sc">==</span> <span class="st">&quot;n&quot;</span>) <span class="sc">*</span> <span class="dv">100</span></span>
+<span id="cb31-361"><a href="#cb31-361" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb31-362"><a href="#cb31-362" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-363"><a href="#cb31-363" aria-hidden="true" tabindex="-1"></a>cols_conservar <span class="ot">&lt;-</span> <span class="fu">which</span>(gaps_por_col <span class="sc">&lt;</span> <span class="dv">50</span>)</span>
+<span id="cb31-364"><a href="#cb31-364" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-365"><a href="#cb31-365" aria-hidden="true" tabindex="-1"></a>coiAlign_trim <span class="ot">&lt;-</span> coiAlign_dnaBin[, cols_conservar]</span>
+<span id="cb31-366"><a href="#cb31-366" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-367"><a href="#cb31-367" aria-hidden="true" tabindex="-1"></a>ape<span class="sc">::</span><span class="fu">write.dna</span>(</span>
+<span id="cb31-368"><a href="#cb31-368" aria-hidden="true" tabindex="-1"></a>  coiAlign_trim,</span>
+<span id="cb31-369"><a href="#cb31-369" aria-hidden="true" tabindex="-1"></a>  <span class="at">file =</span> <span class="st">&quot;hetaerina_lab/02_aligned/alignment_coi_trimmed.fasta&quot;</span>,</span>
+<span id="cb31-370"><a href="#cb31-370" aria-hidden="true" tabindex="-1"></a>  <span class="at">format =</span> <span class="st">&quot;fasta&quot;</span></span>
+<span id="cb31-371"><a href="#cb31-371" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-372"><a href="#cb31-372" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-373"><a href="#cb31-373" aria-hidden="true" tabindex="-1"></a>ape<span class="sc">::</span><span class="fu">checkAlignment</span>(coiAlign_trim, <span class="at">what =</span> <span class="dv">1</span>)</span>
+<span id="cb31-374"><a href="#cb31-374" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb31-375"><a href="#cb31-375" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-376"><a href="#cb31-376" aria-hidden="true" tabindex="-1"></a><span class="fu">## Transformación de datos</span></span>
+<span id="cb31-377"><a href="#cb31-377" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-378"><a href="#cb31-378" aria-hidden="true" tabindex="-1"></a>Recuperamos los haplotipos del alineamiento</span>
 <span id="cb31-379"><a href="#cb31-379" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-382"><a href="#cb31-382" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-383"><a href="#cb31-383" aria-hidden="true" tabindex="-1"></a>coiAlign_trim <span class="ot">&lt;-</span> ape<span class="sc">::</span><span class="fu">read.dna</span>(<span class="st">&quot;hetaerina_lab/02_aligned/alignment_coi_trimmed.fasta&quot;</span>, <span class="at">format =</span> <span class="st">&quot;fasta&quot;</span>)</span>
-<span id="cb31-384"><a href="#cb31-384" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-385"><a href="#cb31-385" aria-hidden="true" tabindex="-1"></a>coiHaplo <span class="ot">&lt;-</span> pegas<span class="sc">::</span><span class="fu">haplotype</span>(coiAlign_trim)</span>
-<span id="cb31-386"><a href="#cb31-386" aria-hidden="true" tabindex="-1"></a>coiHaplo</span>
-<span id="cb31-387"><a href="#cb31-387" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-388"><a href="#cb31-388" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-389"><a href="#cb31-389" aria-hidden="true" tabindex="-1"></a><span class="fu"># Estadísticos de diversidad</span></span>
-<span id="cb31-390"><a href="#cb31-390" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-391"><a href="#cb31-391" aria-hidden="true" tabindex="-1"></a><span class="fu">## Diversidad haplotípica y nucleotídica</span></span>
-<span id="cb31-392"><a href="#cb31-392" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-393"><a href="#cb31-393" aria-hidden="true" tabindex="-1"></a>Para caracterizar la variación genética del conjunto de secuencias analizamos tres estadísticas comúnmente utilizadas en estudios de genética de poblaciones y filogeografía: la diversidad haplotípica (Hd), la diversidad nucleotídica (π) y la D de Tajima.</span>
-<span id="cb31-394"><a href="#cb31-394" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-395"><a href="#cb31-395" aria-hidden="true" tabindex="-1"></a>La diversidad haplotípica (Hd) mide la probabilidad de que dos secuencias elegidas al azar en la muestra correspondan a haplotipos distintos. Este estadístico refleja tanto el número de haplotipos presentes como la distribución de sus frecuencias en la muestra. Valores altos de Hd indican la presencia de múltiples haplotipos o una distribución relativamente equitativa de sus frecuencias.</span>
-<span id="cb31-396"><a href="#cb31-396" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-397"><a href="#cb31-397" aria-hidden="true" tabindex="-1"></a>La diversidad nucleotídica (π) representa el número promedio de diferencias nucleotídicas por sitio entre pares de secuencias de la muestra. Esta métrica proporciona una medida directa del grado de divergencia genética a nivel de nucleótidos dentro del conjunto de datos.</span>
-<span id="cb31-398"><a href="#cb31-398" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-399"><a href="#cb31-399" aria-hidden="true" tabindex="-1"></a>Finalmente, calculamos la D de Tajima, una prueba estadística que compara diferentes estimadores de la diversidad genética basados en el número de sitios segregantes y en las diferencias promedio entre secuencias. Este estadístico permite evaluar desviaciones del modelo neutral de evolución que pueden deberse a procesos demográficos (como expansiones poblacionales o cuellos de botella) o a la acción de la selección natural.</span>
-<span id="cb31-400"><a href="#cb31-400" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-380"><a href="#cb31-380" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-383"><a href="#cb31-383" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-384"><a href="#cb31-384" aria-hidden="true" tabindex="-1"></a>coiAlign_trim <span class="ot">&lt;-</span> ape<span class="sc">::</span><span class="fu">read.dna</span>(<span class="st">&quot;hetaerina_lab/02_aligned/alignment_coi_trimmed.fasta&quot;</span>, <span class="at">format =</span> <span class="st">&quot;fasta&quot;</span>)</span>
+<span id="cb31-385"><a href="#cb31-385" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-386"><a href="#cb31-386" aria-hidden="true" tabindex="-1"></a>coiHaplo <span class="ot">&lt;-</span> pegas<span class="sc">::</span><span class="fu">haplotype</span>(coiAlign_trim)</span>
+<span id="cb31-387"><a href="#cb31-387" aria-hidden="true" tabindex="-1"></a>coiHaplo</span>
+<span id="cb31-388"><a href="#cb31-388" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb31-389"><a href="#cb31-389" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-390"><a href="#cb31-390" aria-hidden="true" tabindex="-1"></a><span class="fu"># Estadísticos de diversidad</span></span>
+<span id="cb31-391"><a href="#cb31-391" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-392"><a href="#cb31-392" aria-hidden="true" tabindex="-1"></a><span class="fu">## Diversidad haplotípica y nucleotídica</span></span>
+<span id="cb31-393"><a href="#cb31-393" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-394"><a href="#cb31-394" aria-hidden="true" tabindex="-1"></a>Para caracterizar la variación genética del conjunto de secuencias analizamos tres estadísticas comúnmente utilizadas en estudios de genética de poblaciones y filogeografía: la diversidad haplotípica (Hd), la diversidad nucleotídica (π) y la D de Tajima.</span>
+<span id="cb31-395"><a href="#cb31-395" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-396"><a href="#cb31-396" aria-hidden="true" tabindex="-1"></a>La diversidad haplotípica (Hd) mide la probabilidad de que dos secuencias elegidas al azar en la muestra correspondan a haplotipos distintos. Este estadístico refleja tanto el número de haplotipos presentes como la distribución de sus frecuencias en la muestra. Valores altos de Hd indican la presencia de múltiples haplotipos o una distribución relativamente equitativa de sus frecuencias.</span>
+<span id="cb31-397"><a href="#cb31-397" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-398"><a href="#cb31-398" aria-hidden="true" tabindex="-1"></a>La diversidad nucleotídica (π) representa el número promedio de diferencias nucleotídicas por sitio entre pares de secuencias de la muestra. Esta métrica proporciona una medida directa del grado de divergencia genética a nivel de nucleótidos dentro del conjunto de datos.</span>
+<span id="cb31-399"><a href="#cb31-399" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-400"><a href="#cb31-400" aria-hidden="true" tabindex="-1"></a>Finalmente, calculamos la D de Tajima, una prueba estadística que compara diferentes estimadores de la diversidad genética basados en el número de sitios segregantes y en las diferencias promedio entre secuencias. Este estadístico permite evaluar desviaciones del modelo neutral de evolución que pueden deberse a procesos demográficos (como expansiones poblacionales o cuellos de botella) o a la acción de la selección natural.</span>
 <span id="cb31-401"><a href="#cb31-401" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-404"><a href="#cb31-404" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-405"><a href="#cb31-405" aria-hidden="true" tabindex="-1"></a>Hd <span class="ot">&lt;-</span> pegas<span class="sc">::</span><span class="fu">hap.div</span>(coiHaplo, <span class="at">variance=</span><span class="cn">TRUE</span>)</span>
-<span id="cb31-406"><a href="#cb31-406" aria-hidden="true" tabindex="-1"></a>Pi <span class="ot">&lt;-</span> pegas<span class="sc">::</span><span class="fu">nuc.div</span>(coiHaplo, <span class="at">variance =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb31-407"><a href="#cb31-407" aria-hidden="true" tabindex="-1"></a>Dtajima <span class="ot">&lt;-</span> pegas<span class="sc">::</span><span class="fu">tajima.test</span>(coiHaplo)</span>
-<span id="cb31-408"><a href="#cb31-408" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-409"><a href="#cb31-409" aria-hidden="true" tabindex="-1"></a>Hd</span>
-<span id="cb31-410"><a href="#cb31-410" aria-hidden="true" tabindex="-1"></a>Pi</span>
-<span id="cb31-411"><a href="#cb31-411" aria-hidden="true" tabindex="-1"></a>Dtajima</span>
-<span id="cb31-412"><a href="#cb31-412" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-413"><a href="#cb31-413" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-414"><a href="#cb31-414" aria-hidden="true" tabindex="-1"></a><span class="fu">## Diferenciación genética</span></span>
-<span id="cb31-415"><a href="#cb31-415" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-402"><a href="#cb31-402" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-405"><a href="#cb31-405" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-406"><a href="#cb31-406" aria-hidden="true" tabindex="-1"></a>Hd <span class="ot">&lt;-</span> pegas<span class="sc">::</span><span class="fu">hap.div</span>(coiHaplo, <span class="at">variance=</span><span class="cn">TRUE</span>)</span>
+<span id="cb31-407"><a href="#cb31-407" aria-hidden="true" tabindex="-1"></a>Pi <span class="ot">&lt;-</span> pegas<span class="sc">::</span><span class="fu">nuc.div</span>(coiHaplo, <span class="at">variance =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb31-408"><a href="#cb31-408" aria-hidden="true" tabindex="-1"></a>Dtajima <span class="ot">&lt;-</span> pegas<span class="sc">::</span><span class="fu">tajima.test</span>(coiHaplo)</span>
+<span id="cb31-409"><a href="#cb31-409" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-410"><a href="#cb31-410" aria-hidden="true" tabindex="-1"></a>Hd</span>
+<span id="cb31-411"><a href="#cb31-411" aria-hidden="true" tabindex="-1"></a>Pi</span>
+<span id="cb31-412"><a href="#cb31-412" aria-hidden="true" tabindex="-1"></a>Dtajima</span>
+<span id="cb31-413"><a href="#cb31-413" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb31-414"><a href="#cb31-414" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-415"><a href="#cb31-415" aria-hidden="true" tabindex="-1"></a><span class="fu">## Diferenciación genética</span></span>
 <span id="cb31-416"><a href="#cb31-416" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-419"><a href="#cb31-419" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-420"><a href="#cb31-420" aria-hidden="true" tabindex="-1"></a>coi_genind <span class="ot">&lt;-</span> adegenet<span class="sc">::</span><span class="fu">DNAbin2genind</span>(coiAlign_trim)</span>
-<span id="cb31-421"><a href="#cb31-421" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-417"><a href="#cb31-417" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-420"><a href="#cb31-420" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-421"><a href="#cb31-421" aria-hidden="true" tabindex="-1"></a>coi_genind <span class="ot">&lt;-</span> adegenet<span class="sc">::</span><span class="fu">DNAbin2genind</span>(coiAlign_trim)</span>
 <span id="cb31-422"><a href="#cb31-422" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-423"><a href="#cb31-423" aria-hidden="true" tabindex="-1"></a>metadata_COI <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;hetaerina_lab/01_metadata/metadata_COI.csv&quot;</span>)</span>
-<span id="cb31-424"><a href="#cb31-424" aria-hidden="true" tabindex="-1"></a>metadata_COI<span class="sc">$</span>locCode <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(metadata_COI<span class="sc">$</span>locCode)</span>
-<span id="cb31-425"><a href="#cb31-425" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-426"><a href="#cb31-426" aria-hidden="true" tabindex="-1"></a>adegenet<span class="sc">::</span><span class="fu">strata</span>(coi_genind) <span class="ot">&lt;-</span> metadata_COI</span>
-<span id="cb31-427"><a href="#cb31-427" aria-hidden="true" tabindex="-1"></a>adegenet<span class="sc">::</span><span class="fu">setPop</span>(coi_genind) <span class="ot">&lt;-</span> <span class="er">~</span>locCode</span>
-<span id="cb31-428"><a href="#cb31-428" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-429"><a href="#cb31-429" aria-hidden="true" tabindex="-1"></a>coi_genind</span>
-<span id="cb31-430"><a href="#cb31-430" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-431"><a href="#cb31-431" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-432"><a href="#cb31-432" aria-hidden="true" tabindex="-1"></a><span class="fu">### Análisis de varianza molecular AMOVA</span></span>
-<span id="cb31-433"><a href="#cb31-433" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-423"><a href="#cb31-423" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-424"><a href="#cb31-424" aria-hidden="true" tabindex="-1"></a>metadata_COI <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;hetaerina_lab/01_metadata/metadata_COI.csv&quot;</span>)</span>
+<span id="cb31-425"><a href="#cb31-425" aria-hidden="true" tabindex="-1"></a>metadata_COI<span class="sc">$</span>locCode <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(metadata_COI<span class="sc">$</span>locCode)</span>
+<span id="cb31-426"><a href="#cb31-426" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-427"><a href="#cb31-427" aria-hidden="true" tabindex="-1"></a>adegenet<span class="sc">::</span><span class="fu">strata</span>(coi_genind) <span class="ot">&lt;-</span> metadata_COI</span>
+<span id="cb31-428"><a href="#cb31-428" aria-hidden="true" tabindex="-1"></a>adegenet<span class="sc">::</span><span class="fu">setPop</span>(coi_genind) <span class="ot">&lt;-</span> <span class="er">~</span>locCode</span>
+<span id="cb31-429"><a href="#cb31-429" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-430"><a href="#cb31-430" aria-hidden="true" tabindex="-1"></a>coi_genind</span>
+<span id="cb31-431"><a href="#cb31-431" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb31-432"><a href="#cb31-432" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-433"><a href="#cb31-433" aria-hidden="true" tabindex="-1"></a><span class="fu">### Análisis de varianza molecular AMOVA</span></span>
 <span id="cb31-434"><a href="#cb31-434" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-437"><a href="#cb31-437" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-438"><a href="#cb31-438" aria-hidden="true" tabindex="-1"></a>amova_pop <span class="ot">&lt;-</span> poppr<span class="sc">::</span><span class="fu">poppr.amova</span>(coi_genind, <span class="at">hier =</span> <span class="sc">~</span>locCode, <span class="at">within=</span><span class="cn">FALSE</span>, <span class="at">method =</span> <span class="st">&quot;ade4&quot;</span>)</span>
-<span id="cb31-439"><a href="#cb31-439" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-440"><a href="#cb31-440" aria-hidden="true" tabindex="-1"></a>amova_pop</span>
-<span id="cb31-441"><a href="#cb31-441" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-442"><a href="#cb31-442" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-443"><a href="#cb31-443" aria-hidden="true" tabindex="-1"></a><span class="fu">### Redes de haplotipos</span></span>
-<span id="cb31-444"><a href="#cb31-444" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-435"><a href="#cb31-435" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-438"><a href="#cb31-438" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-439"><a href="#cb31-439" aria-hidden="true" tabindex="-1"></a>amova_pop <span class="ot">&lt;-</span> poppr<span class="sc">::</span><span class="fu">poppr.amova</span>(coi_genind, <span class="at">hier =</span> <span class="sc">~</span>locCode, <span class="at">within=</span><span class="cn">FALSE</span>, <span class="at">method =</span> <span class="st">&quot;ade4&quot;</span>)</span>
+<span id="cb31-440"><a href="#cb31-440" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-441"><a href="#cb31-441" aria-hidden="true" tabindex="-1"></a>amova_pop</span>
+<span id="cb31-442"><a href="#cb31-442" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb31-443"><a href="#cb31-443" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-444"><a href="#cb31-444" aria-hidden="true" tabindex="-1"></a><span class="fu">### Redes de haplotipos</span></span>
 <span id="cb31-445"><a href="#cb31-445" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-448"><a href="#cb31-448" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-449"><a href="#cb31-449" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(coiHaplo) <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">as.roman</span>(<span class="fu">rownames</span>(coiHaplo)))</span>
-<span id="cb31-450"><a href="#cb31-450" aria-hidden="true" tabindex="-1"></a>red <span class="ot">&lt;-</span> pegas<span class="sc">::</span><span class="fu">haploNet</span>(coiHaplo)</span>
-<span id="cb31-451"><a href="#cb31-451" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-446"><a href="#cb31-446" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-449"><a href="#cb31-449" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-450"><a href="#cb31-450" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(coiHaplo) <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">as.roman</span>(<span class="fu">rownames</span>(coiHaplo)))</span>
+<span id="cb31-451"><a href="#cb31-451" aria-hidden="true" tabindex="-1"></a>red <span class="ot">&lt;-</span> pegas<span class="sc">::</span><span class="fu">haploNet</span>(coiHaplo)</span>
 <span id="cb31-452"><a href="#cb31-452" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-453"><a href="#cb31-453" aria-hidden="true" tabindex="-1"></a>freq_hap <span class="ot">&lt;-</span> <span class="fu">summary</span>(coiHaplo)</span>
-<span id="cb31-454"><a href="#cb31-454" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(freq_hap) <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">as.roman</span>(<span class="fu">names</span>(freq_hap)))</span>
-<span id="cb31-455"><a href="#cb31-455" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-456"><a href="#cb31-456" aria-hidden="true" tabindex="-1"></a><span class="co"># ¿Qué haplotipo tiene cada individuo?</span></span>
-<span id="cb31-457"><a href="#cb31-457" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> <span class="fu">stack</span>(<span class="fu">setNames</span>(<span class="fu">attr</span>(coiHaplo, <span class="st">&quot;index&quot;</span>), <span class="fu">rownames</span>(coiHaplo))) <span class="co"># recuperar qué secuencia pertenece a qué haplotipo</span></span>
-<span id="cb31-458"><a href="#cb31-458" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-459"><a href="#cb31-459" aria-hidden="true" tabindex="-1"></a>ind_hap <span class="ot">&lt;-</span> <span class="fu">tapply</span>(<span class="fu">as.integer</span>(tmp<span class="sc">$</span>ind), tmp<span class="sc">$</span>values, identity) <span class="co"># Agrupar los haplotipos usando como índice los indiviuos, es decir, generar un objeto en el que podamos saber qué haplotipo tiene cada individuo.</span></span>
-<span id="cb31-460"><a href="#cb31-460" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-461"><a href="#cb31-461" aria-hidden="true" tabindex="-1"></a><span class="co"># Asignar colores a cada pais</span></span>
-<span id="cb31-462"><a href="#cb31-462" aria-hidden="true" tabindex="-1"></a>countries <span class="ot">&lt;-</span> metadata_COI<span class="sc">$</span>Country <span class="co"># Vamos a colorear los haplotipos por pais</span></span>
-<span id="cb31-463"><a href="#cb31-463" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-464"><a href="#cb31-464" aria-hidden="true" tabindex="-1"></a>countries <span class="ot">&lt;-</span> <span class="fu">factor</span>(countries, <span class="at">levels =</span> <span class="fu">unique</span>(countries))</span>
-<span id="cb31-465"><a href="#cb31-465" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-466"><a href="#cb31-466" aria-hidden="true" tabindex="-1"></a>n_countries <span class="ot">&lt;-</span> <span class="fu">length</span>(<span class="fu">unique</span>(countries)) <span class="co"># Numero de localidades</span></span>
-<span id="cb31-467"><a href="#cb31-467" aria-hidden="true" tabindex="-1"></a>paleta <span class="ot">&lt;-</span> RColorBrewer<span class="sc">::</span><span class="fu">brewer.pal</span>(<span class="fu">min</span>(n_countries, <span class="dv">8</span>), <span class="st">&quot;Set1&quot;</span>) <span class="co"># Asignar un color a cada pais</span></span>
-<span id="cb31-468"><a href="#cb31-468" aria-hidden="true" tabindex="-1"></a>colores_countries <span class="ot">&lt;-</span> <span class="fu">setNames</span>(</span>
-<span id="cb31-469"><a href="#cb31-469" aria-hidden="true" tabindex="-1"></a>  paleta[<span class="fu">as.integer</span>(<span class="fu">as.factor</span>(<span class="fu">unique</span>(n_countries)))],</span>
-<span id="cb31-470"><a href="#cb31-470" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unique</span>(n_countries)</span>
-<span id="cb31-471"><a href="#cb31-471" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb31-472"><a href="#cb31-472" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-473"><a href="#cb31-473" aria-hidden="true" tabindex="-1"></a><span class="co"># Matriz de proporción por haplotipo</span></span>
-<span id="cb31-474"><a href="#cb31-474" aria-hidden="true" tabindex="-1"></a>prop_matriz <span class="ot">&lt;-</span> ind_hap <span class="sc">|&gt;</span></span>
-<span id="cb31-475"><a href="#cb31-475" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lapply</span>(<span class="cf">function</span>(idx) <span class="fu">table</span>(countries[idx]) <span class="sc">/</span> <span class="fu">length</span>(idx)) <span class="sc">|&gt;</span></span>
-<span id="cb31-476"><a href="#cb31-476" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>() <span class="sc">|&gt;</span></span>
-<span id="cb31-477"><a href="#cb31-477" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.matrix</span>()</span>
-<span id="cb31-478"><a href="#cb31-478" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-479"><a href="#cb31-479" aria-hidden="true" tabindex="-1"></a><span class="co"># Graficar</span></span>
-<span id="cb31-480"><a href="#cb31-480" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(</span>
-<span id="cb31-481"><a href="#cb31-481" aria-hidden="true" tabindex="-1"></a>  red,</span>
-<span id="cb31-482"><a href="#cb31-482" aria-hidden="true" tabindex="-1"></a>  <span class="at">size =</span> freq_hap <span class="sc">*</span> <span class="dv">10</span>, <span class="co"># tamaño de los haplotipos proporcional a su frecuencia</span></span>
-<span id="cb31-483"><a href="#cb31-483" aria-hidden="true" tabindex="-1"></a>  <span class="at">pie =</span> prop_matriz, <span class="co"># Asignar los colores por pais (usando graficas de pie)</span></span>
-<span id="cb31-484"><a href="#cb31-484" aria-hidden="true" tabindex="-1"></a>  <span class="at">bg =</span> paleta,</span>
-<span id="cb31-485"><a href="#cb31-485" aria-hidden="true" tabindex="-1"></a>  <span class="at">legend =</span> <span class="fu">c</span>(<span class="dv">100</span>, <span class="sc">-</span><span class="dv">10</span>),</span>
-<span id="cb31-486"><a href="#cb31-486" aria-hidden="true" tabindex="-1"></a>  <span class="at">show.mutation =</span> <span class="dv">1</span>, <span class="co"># mostrar número de mutaciones en las ramas</span></span>
-<span id="cb31-487"><a href="#cb31-487" aria-hidden="true" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Red de haplotipos COI – Libélula&quot;</span></span>
-<span id="cb31-488"><a href="#cb31-488" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb31-489"><a href="#cb31-489" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-490"><a href="#cb31-490" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-491"><a href="#cb31-491" aria-hidden="true" tabindex="-1"></a>Para modificar las coordenadas, en una terminal vamos a correr el script <span class="in">`mini_code_redhap.R`</span>, después vamos a modificar las coordenadas y guardarlas en un nuevo objeto.</span>
-<span id="cb31-492"><a href="#cb31-492" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-495"><a href="#cb31-495" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-496"><a href="#cb31-496" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
-<span id="cb31-497"><a href="#cb31-497" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-498"><a href="#cb31-498" aria-hidden="true" tabindex="-1"></a><span class="co"># Primero abrir la terminal, abrir R y correr:</span></span>
-<span id="cb31-499"><a href="#cb31-499" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;mini_code_redhap.R&quot;</span>)  <span class="co"># carga la red</span></span>
-<span id="cb31-500"><a href="#cb31-500" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-501"><a href="#cb31-501" aria-hidden="true" tabindex="-1"></a><span class="co"># Posteriormente correr:</span></span>
-<span id="cb31-502"><a href="#cb31-502" aria-hidden="true" tabindex="-1"></a>coords_red <span class="ot">&lt;-</span> pegas<span class="sc">::</span><span class="fu">replot</span>()  <span class="co"># abre ventana interactiva</span></span>
-<span id="cb31-503"><a href="#cb31-503" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(coords_red, <span class="st">&quot;hetaerina_lab/03_outputs/coords_red_haplotipos_modificadas.rds&quot;</span>)</span>
-<span id="cb31-504"><a href="#cb31-504" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-505"><a href="#cb31-505" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-508"><a href="#cb31-508" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-509"><a href="#cb31-509" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 15</span></span>
-<span id="cb31-510"><a href="#cb31-510" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 10</span></span>
-<span id="cb31-511"><a href="#cb31-511" aria-hidden="true" tabindex="-1"></a><span class="co"># Graficar</span></span>
-<span id="cb31-512"><a href="#cb31-512" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-513"><a href="#cb31-513" aria-hidden="true" tabindex="-1"></a>coords_manual <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(</span>
-<span id="cb31-514"><a href="#cb31-514" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;hetaerina_lab/03_outputs/coords_red_haplotipos_modificadas.rds&quot;</span></span>
-<span id="cb31-515"><a href="#cb31-515" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb31-516"><a href="#cb31-516" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-517"><a href="#cb31-517" aria-hidden="true" tabindex="-1"></a>grupo3 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">31</span><span class="sc">:</span><span class="dv">46</span>)</span>
-<span id="cb31-518"><a href="#cb31-518" aria-hidden="true" tabindex="-1"></a>grupo4 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">47</span><span class="sc">:</span><span class="dv">62</span>)</span>
-<span id="cb31-519"><a href="#cb31-519" aria-hidden="true" tabindex="-1"></a>grupo2 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">29</span>, <span class="dv">30</span>)</span>
-<span id="cb31-520"><a href="#cb31-520" aria-hidden="true" tabindex="-1"></a>grupo1 <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">62</span>, <span class="fu">c</span>(grupo4, grupo2, grupo3))</span>
-<span id="cb31-521"><a href="#cb31-521" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-522"><a href="#cb31-522" aria-hidden="true" tabindex="-1"></a><span class="co"># Función personalizada para generar paleta por grupo</span></span>
-<span id="cb31-523"><a href="#cb31-523" aria-hidden="true" tabindex="-1"></a>asignar_colores <span class="ot">&lt;-</span> <span class="cf">function</span>(haps, paleta_base) {</span>
-<span id="cb31-524"><a href="#cb31-524" aria-hidden="true" tabindex="-1"></a>  colores <span class="ot">&lt;-</span> grDevices<span class="sc">::</span><span class="fu">colorRampPalette</span>(paleta_base)(<span class="fu">length</span>(haps))</span>
-<span id="cb31-525"><a href="#cb31-525" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">data.frame</span>(<span class="at">hap =</span> haps, <span class="at">color =</span> colores))</span>
-<span id="cb31-526"><a href="#cb31-526" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb31-527"><a href="#cb31-527" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-528"><a href="#cb31-528" aria-hidden="true" tabindex="-1"></a><span class="co"># Definir paletas base por grupo</span></span>
-<span id="cb31-529"><a href="#cb31-529" aria-hidden="true" tabindex="-1"></a>colores_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
-<span id="cb31-530"><a href="#cb31-530" aria-hidden="true" tabindex="-1"></a>  <span class="fu">asignar_colores</span>(grupo1, <span class="fu">c</span>(<span class="st">&quot;#9cf989&quot;</span>, <span class="st">&quot;#006600&quot;</span>)), <span class="co"># verdes</span></span>
-<span id="cb31-531"><a href="#cb31-531" aria-hidden="true" tabindex="-1"></a>  <span class="fu">asignar_colores</span>(grupo2, <span class="fu">c</span>(<span class="st">&quot;#ffff99&quot;</span>, <span class="st">&quot;#e8d64e&quot;</span>)), <span class="co"># amarillos</span></span>
-<span id="cb31-532"><a href="#cb31-532" aria-hidden="true" tabindex="-1"></a>  <span class="fu">asignar_colores</span>(grupo3, <span class="fu">c</span>(<span class="st">&quot;#ffcccc&quot;</span>, <span class="st">&quot;#cc0000&quot;</span>)), <span class="co"># rojos</span></span>
-<span id="cb31-533"><a href="#cb31-533" aria-hidden="true" tabindex="-1"></a>  <span class="fu">asignar_colores</span>(grupo4, <span class="fu">c</span>(<span class="st">&quot;#cce0ff&quot;</span>, <span class="st">&quot;#003399&quot;</span>)) <span class="co"># azules</span></span>
-<span id="cb31-534"><a href="#cb31-534" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb31-535"><a href="#cb31-535" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-536"><a href="#cb31-536" aria-hidden="true" tabindex="-1"></a>mod_freq_hap <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(freq_hap <span class="sc">&gt;</span> <span class="dv">30</span>, freq_hap <span class="sc">*</span> <span class="fl">1.5</span>, (<span class="fu">log1p</span>(freq_hap)) <span class="sc">*</span> <span class="dv">15</span>)</span>
-<span id="cb31-537"><a href="#cb31-537" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-453"><a href="#cb31-453" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-454"><a href="#cb31-454" aria-hidden="true" tabindex="-1"></a>freq_hap <span class="ot">&lt;-</span> <span class="fu">summary</span>(coiHaplo)</span>
+<span id="cb31-455"><a href="#cb31-455" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(freq_hap) <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">as.roman</span>(<span class="fu">names</span>(freq_hap)))</span>
+<span id="cb31-456"><a href="#cb31-456" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-457"><a href="#cb31-457" aria-hidden="true" tabindex="-1"></a><span class="co"># ¿Qué haplotipo tiene cada individuo?</span></span>
+<span id="cb31-458"><a href="#cb31-458" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> <span class="fu">stack</span>(<span class="fu">setNames</span>(<span class="fu">attr</span>(coiHaplo, <span class="st">&quot;index&quot;</span>), <span class="fu">rownames</span>(coiHaplo))) <span class="co"># recuperar qué secuencia pertenece a qué haplotipo</span></span>
+<span id="cb31-459"><a href="#cb31-459" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-460"><a href="#cb31-460" aria-hidden="true" tabindex="-1"></a>ind_hap <span class="ot">&lt;-</span> <span class="fu">tapply</span>(<span class="fu">as.integer</span>(tmp<span class="sc">$</span>ind), tmp<span class="sc">$</span>values, identity) <span class="co"># Agrupar los haplotipos usando como índice los indiviuos, es decir, generar un objeto en el que podamos saber qué haplotipo tiene cada individuo.</span></span>
+<span id="cb31-461"><a href="#cb31-461" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-462"><a href="#cb31-462" aria-hidden="true" tabindex="-1"></a><span class="co"># Asignar colores a cada pais</span></span>
+<span id="cb31-463"><a href="#cb31-463" aria-hidden="true" tabindex="-1"></a>countries <span class="ot">&lt;-</span> metadata_COI<span class="sc">$</span>Country <span class="co"># Vamos a colorear los haplotipos por pais</span></span>
+<span id="cb31-464"><a href="#cb31-464" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-465"><a href="#cb31-465" aria-hidden="true" tabindex="-1"></a>countries <span class="ot">&lt;-</span> <span class="fu">factor</span>(countries, <span class="at">levels =</span> <span class="fu">unique</span>(countries))</span>
+<span id="cb31-466"><a href="#cb31-466" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-467"><a href="#cb31-467" aria-hidden="true" tabindex="-1"></a>n_countries <span class="ot">&lt;-</span> <span class="fu">length</span>(<span class="fu">unique</span>(countries)) <span class="co"># Numero de localidades</span></span>
+<span id="cb31-468"><a href="#cb31-468" aria-hidden="true" tabindex="-1"></a>paleta <span class="ot">&lt;-</span> RColorBrewer<span class="sc">::</span><span class="fu">brewer.pal</span>(<span class="fu">min</span>(n_countries, <span class="dv">8</span>), <span class="st">&quot;Set1&quot;</span>) <span class="co"># Asignar un color a cada pais</span></span>
+<span id="cb31-469"><a href="#cb31-469" aria-hidden="true" tabindex="-1"></a>colores_countries <span class="ot">&lt;-</span> <span class="fu">setNames</span>(</span>
+<span id="cb31-470"><a href="#cb31-470" aria-hidden="true" tabindex="-1"></a>  paleta[<span class="fu">as.integer</span>(<span class="fu">as.factor</span>(<span class="fu">unique</span>(n_countries)))],</span>
+<span id="cb31-471"><a href="#cb31-471" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unique</span>(n_countries)</span>
+<span id="cb31-472"><a href="#cb31-472" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-473"><a href="#cb31-473" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-474"><a href="#cb31-474" aria-hidden="true" tabindex="-1"></a><span class="co"># Matriz de proporción por haplotipo</span></span>
+<span id="cb31-475"><a href="#cb31-475" aria-hidden="true" tabindex="-1"></a>prop_matriz <span class="ot">&lt;-</span> ind_hap <span class="sc">|&gt;</span></span>
+<span id="cb31-476"><a href="#cb31-476" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lapply</span>(<span class="cf">function</span>(idx) <span class="fu">table</span>(countries[idx]) <span class="sc">/</span> <span class="fu">length</span>(idx)) <span class="sc">|&gt;</span></span>
+<span id="cb31-477"><a href="#cb31-477" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>() <span class="sc">|&gt;</span></span>
+<span id="cb31-478"><a href="#cb31-478" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.matrix</span>()</span>
+<span id="cb31-479"><a href="#cb31-479" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-480"><a href="#cb31-480" aria-hidden="true" tabindex="-1"></a><span class="co"># Graficar</span></span>
+<span id="cb31-481"><a href="#cb31-481" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(</span>
+<span id="cb31-482"><a href="#cb31-482" aria-hidden="true" tabindex="-1"></a>  red,</span>
+<span id="cb31-483"><a href="#cb31-483" aria-hidden="true" tabindex="-1"></a>  <span class="at">size =</span> freq_hap <span class="sc">*</span> <span class="dv">10</span>, <span class="co"># tamaño de los haplotipos proporcional a su frecuencia</span></span>
+<span id="cb31-484"><a href="#cb31-484" aria-hidden="true" tabindex="-1"></a>  <span class="at">pie =</span> prop_matriz, <span class="co"># Asignar los colores por pais (usando graficas de pie)</span></span>
+<span id="cb31-485"><a href="#cb31-485" aria-hidden="true" tabindex="-1"></a>  <span class="at">bg =</span> paleta,</span>
+<span id="cb31-486"><a href="#cb31-486" aria-hidden="true" tabindex="-1"></a>  <span class="at">legend =</span> <span class="fu">c</span>(<span class="dv">100</span>, <span class="sc">-</span><span class="dv">10</span>),</span>
+<span id="cb31-487"><a href="#cb31-487" aria-hidden="true" tabindex="-1"></a>  <span class="at">show.mutation =</span> <span class="dv">1</span>, <span class="co"># mostrar número de mutaciones en las ramas</span></span>
+<span id="cb31-488"><a href="#cb31-488" aria-hidden="true" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Red de haplotipos COI – Libélula&quot;</span></span>
+<span id="cb31-489"><a href="#cb31-489" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-490"><a href="#cb31-490" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb31-491"><a href="#cb31-491" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-492"><a href="#cb31-492" aria-hidden="true" tabindex="-1"></a>Para modificar las coordenadas, en una terminal vamos a correr el script <span class="in">`mini_code_redhap.R`</span>, después vamos a modificar las coordenadas y guardarlas en un nuevo objeto.</span>
+<span id="cb31-493"><a href="#cb31-493" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-496"><a href="#cb31-496" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-497"><a href="#cb31-497" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
+<span id="cb31-498"><a href="#cb31-498" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-499"><a href="#cb31-499" aria-hidden="true" tabindex="-1"></a><span class="co"># Primero abrir la terminal, abrir R y correr:</span></span>
+<span id="cb31-500"><a href="#cb31-500" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;mini_code_redhap.R&quot;</span>)  <span class="co"># carga la red</span></span>
+<span id="cb31-501"><a href="#cb31-501" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-502"><a href="#cb31-502" aria-hidden="true" tabindex="-1"></a><span class="co"># Posteriormente correr:</span></span>
+<span id="cb31-503"><a href="#cb31-503" aria-hidden="true" tabindex="-1"></a>coords_red <span class="ot">&lt;-</span> pegas<span class="sc">::</span><span class="fu">replot</span>()  <span class="co"># abre ventana interactiva</span></span>
+<span id="cb31-504"><a href="#cb31-504" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(coords_red, <span class="st">&quot;hetaerina_lab/03_outputs/coords_red_haplotipos_modificadas.rds&quot;</span>)</span>
+<span id="cb31-505"><a href="#cb31-505" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb31-506"><a href="#cb31-506" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-509"><a href="#cb31-509" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-510"><a href="#cb31-510" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 15</span></span>
+<span id="cb31-511"><a href="#cb31-511" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 10</span></span>
+<span id="cb31-512"><a href="#cb31-512" aria-hidden="true" tabindex="-1"></a><span class="co"># Graficar</span></span>
+<span id="cb31-513"><a href="#cb31-513" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-514"><a href="#cb31-514" aria-hidden="true" tabindex="-1"></a>coords_manual <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(</span>
+<span id="cb31-515"><a href="#cb31-515" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;hetaerina_lab/03_outputs/coords_red_haplotipos_modificadas.rds&quot;</span></span>
+<span id="cb31-516"><a href="#cb31-516" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-517"><a href="#cb31-517" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-518"><a href="#cb31-518" aria-hidden="true" tabindex="-1"></a>grupo3 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">31</span><span class="sc">:</span><span class="dv">46</span>)</span>
+<span id="cb31-519"><a href="#cb31-519" aria-hidden="true" tabindex="-1"></a>grupo4 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">47</span><span class="sc">:</span><span class="dv">62</span>)</span>
+<span id="cb31-520"><a href="#cb31-520" aria-hidden="true" tabindex="-1"></a>grupo2 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">29</span>, <span class="dv">30</span>)</span>
+<span id="cb31-521"><a href="#cb31-521" aria-hidden="true" tabindex="-1"></a>grupo1 <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">62</span>, <span class="fu">c</span>(grupo4, grupo2, grupo3))</span>
+<span id="cb31-522"><a href="#cb31-522" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-523"><a href="#cb31-523" aria-hidden="true" tabindex="-1"></a><span class="co"># Función personalizada para generar paleta por grupo</span></span>
+<span id="cb31-524"><a href="#cb31-524" aria-hidden="true" tabindex="-1"></a>asignar_colores <span class="ot">&lt;-</span> <span class="cf">function</span>(haps, paleta_base) {</span>
+<span id="cb31-525"><a href="#cb31-525" aria-hidden="true" tabindex="-1"></a>  colores <span class="ot">&lt;-</span> grDevices<span class="sc">::</span><span class="fu">colorRampPalette</span>(paleta_base)(<span class="fu">length</span>(haps))</span>
+<span id="cb31-526"><a href="#cb31-526" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">data.frame</span>(<span class="at">hap =</span> haps, <span class="at">color =</span> colores))</span>
+<span id="cb31-527"><a href="#cb31-527" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb31-528"><a href="#cb31-528" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-529"><a href="#cb31-529" aria-hidden="true" tabindex="-1"></a><span class="co"># Definir paletas base por grupo</span></span>
+<span id="cb31-530"><a href="#cb31-530" aria-hidden="true" tabindex="-1"></a>colores_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb31-531"><a href="#cb31-531" aria-hidden="true" tabindex="-1"></a>  <span class="fu">asignar_colores</span>(grupo1, <span class="fu">c</span>(<span class="st">&quot;#9cf989&quot;</span>, <span class="st">&quot;#006600&quot;</span>)), <span class="co"># verdes</span></span>
+<span id="cb31-532"><a href="#cb31-532" aria-hidden="true" tabindex="-1"></a>  <span class="fu">asignar_colores</span>(grupo2, <span class="fu">c</span>(<span class="st">&quot;#ffff99&quot;</span>, <span class="st">&quot;#e8d64e&quot;</span>)), <span class="co"># amarillos</span></span>
+<span id="cb31-533"><a href="#cb31-533" aria-hidden="true" tabindex="-1"></a>  <span class="fu">asignar_colores</span>(grupo3, <span class="fu">c</span>(<span class="st">&quot;#ffcccc&quot;</span>, <span class="st">&quot;#cc0000&quot;</span>)), <span class="co"># rojos</span></span>
+<span id="cb31-534"><a href="#cb31-534" aria-hidden="true" tabindex="-1"></a>  <span class="fu">asignar_colores</span>(grupo4, <span class="fu">c</span>(<span class="st">&quot;#cce0ff&quot;</span>, <span class="st">&quot;#003399&quot;</span>)) <span class="co"># azules</span></span>
+<span id="cb31-535"><a href="#cb31-535" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-536"><a href="#cb31-536" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-537"><a href="#cb31-537" aria-hidden="true" tabindex="-1"></a>mod_freq_hap <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(freq_hap <span class="sc">&gt;</span> <span class="dv">30</span>, freq_hap <span class="sc">*</span> <span class="fl">1.5</span>, (<span class="fu">log1p</span>(freq_hap)) <span class="sc">*</span> <span class="dv">15</span>)</span>
 <span id="cb31-538"><a href="#cb31-538" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-539"><a href="#cb31-539" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(</span>
-<span id="cb31-540"><a href="#cb31-540" aria-hidden="true" tabindex="-1"></a>  red,</span>
-<span id="cb31-541"><a href="#cb31-541" aria-hidden="true" tabindex="-1"></a>  <span class="at">size =</span> mod_freq_hap,</span>
-<span id="cb31-542"><a href="#cb31-542" aria-hidden="true" tabindex="-1"></a>  <span class="at">bg =</span> colores_df<span class="sc">$</span>color,</span>
-<span id="cb31-543"><a href="#cb31-543" aria-hidden="true" tabindex="-1"></a>  <span class="at">xy =</span> coords_manual,</span>
-<span id="cb31-544"><a href="#cb31-544" aria-hidden="true" tabindex="-1"></a>  <span class="at">show.mutation =</span> <span class="dv">1</span>,</span>
-<span id="cb31-545"><a href="#cb31-545" aria-hidden="true" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Red de haplotipos COI – Libélula&quot;</span>,</span>
-<span id="cb31-546"><a href="#cb31-546" aria-hidden="true" tabindex="-1"></a>  <span class="at">threshold =</span> <span class="dv">0</span></span>
-<span id="cb31-547"><a href="#cb31-547" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb31-548"><a href="#cb31-548" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-549"><a href="#cb31-549" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-552"><a href="#cb31-552" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-553"><a href="#cb31-553" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
-<span id="cb31-554"><a href="#cb31-554" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-555"><a href="#cb31-555" aria-hidden="true" tabindex="-1"></a><span class="fu">pdf</span>(<span class="st">&quot;hetaerina_lab/03_outputs/red_haplotipos_COI.pdf&quot;</span>, <span class="at">width =</span> <span class="dv">15</span>, <span class="at">height =</span> <span class="dv">10</span>)</span>
-<span id="cb31-556"><a href="#cb31-556" aria-hidden="true" tabindex="-1"></a><span class="co"># Graficar</span></span>
-<span id="cb31-557"><a href="#cb31-557" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(</span>
-<span id="cb31-558"><a href="#cb31-558" aria-hidden="true" tabindex="-1"></a>  red,</span>
-<span id="cb31-559"><a href="#cb31-559" aria-hidden="true" tabindex="-1"></a>  <span class="at">size =</span> mod_freq_hap, <span class="co"># tamaño de los haplotipos proporcional a su frecuencia</span></span>
-<span id="cb31-560"><a href="#cb31-560" aria-hidden="true" tabindex="-1"></a>  <span class="at">bg =</span> colores_df<span class="sc">$</span>color,</span>
-<span id="cb31-561"><a href="#cb31-561" aria-hidden="true" tabindex="-1"></a>  <span class="at">xy =</span> coords_manual,</span>
-<span id="cb31-562"><a href="#cb31-562" aria-hidden="true" tabindex="-1"></a>  <span class="at">show.mutation =</span> <span class="dv">1</span>, <span class="co"># mostrar número de mutaciones en las ramas</span></span>
-<span id="cb31-563"><a href="#cb31-563" aria-hidden="true" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Red de haplotipos COI – Libélula&quot;</span>,</span>
-<span id="cb31-564"><a href="#cb31-564" aria-hidden="true" tabindex="-1"></a>  <span class="at">threshold =</span> <span class="dv">0</span></span>
-<span id="cb31-565"><a href="#cb31-565" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb31-566"><a href="#cb31-566" aria-hidden="true" tabindex="-1"></a><span class="fu">dev.off</span>()</span>
-<span id="cb31-567"><a href="#cb31-567" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb31-568"><a href="#cb31-568" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-569"><a href="#cb31-569" aria-hidden="true" tabindex="-1"></a><span class="fu">## Mapa</span></span>
-<span id="cb31-570"><a href="#cb31-570" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-539"><a href="#cb31-539" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-540"><a href="#cb31-540" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(</span>
+<span id="cb31-541"><a href="#cb31-541" aria-hidden="true" tabindex="-1"></a>  red,</span>
+<span id="cb31-542"><a href="#cb31-542" aria-hidden="true" tabindex="-1"></a>  <span class="at">size =</span> mod_freq_hap,</span>
+<span id="cb31-543"><a href="#cb31-543" aria-hidden="true" tabindex="-1"></a>  <span class="at">bg =</span> colores_df<span class="sc">$</span>color,</span>
+<span id="cb31-544"><a href="#cb31-544" aria-hidden="true" tabindex="-1"></a>  <span class="at">xy =</span> coords_manual,</span>
+<span id="cb31-545"><a href="#cb31-545" aria-hidden="true" tabindex="-1"></a>  <span class="at">show.mutation =</span> <span class="dv">1</span>,</span>
+<span id="cb31-546"><a href="#cb31-546" aria-hidden="true" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Red de haplotipos COI – Libélula&quot;</span>,</span>
+<span id="cb31-547"><a href="#cb31-547" aria-hidden="true" tabindex="-1"></a>  <span class="at">threshold =</span> <span class="dv">0</span></span>
+<span id="cb31-548"><a href="#cb31-548" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-549"><a href="#cb31-549" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb31-550"><a href="#cb31-550" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-553"><a href="#cb31-553" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-554"><a href="#cb31-554" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
+<span id="cb31-555"><a href="#cb31-555" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-556"><a href="#cb31-556" aria-hidden="true" tabindex="-1"></a><span class="fu">pdf</span>(<span class="st">&quot;hetaerina_lab/03_outputs/red_haplotipos_COI.pdf&quot;</span>, <span class="at">width =</span> <span class="dv">15</span>, <span class="at">height =</span> <span class="dv">10</span>)</span>
+<span id="cb31-557"><a href="#cb31-557" aria-hidden="true" tabindex="-1"></a><span class="co"># Graficar</span></span>
+<span id="cb31-558"><a href="#cb31-558" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(</span>
+<span id="cb31-559"><a href="#cb31-559" aria-hidden="true" tabindex="-1"></a>  red,</span>
+<span id="cb31-560"><a href="#cb31-560" aria-hidden="true" tabindex="-1"></a>  <span class="at">size =</span> mod_freq_hap, <span class="co"># tamaño de los haplotipos proporcional a su frecuencia</span></span>
+<span id="cb31-561"><a href="#cb31-561" aria-hidden="true" tabindex="-1"></a>  <span class="at">bg =</span> colores_df<span class="sc">$</span>color,</span>
+<span id="cb31-562"><a href="#cb31-562" aria-hidden="true" tabindex="-1"></a>  <span class="at">xy =</span> coords_manual,</span>
+<span id="cb31-563"><a href="#cb31-563" aria-hidden="true" tabindex="-1"></a>  <span class="at">show.mutation =</span> <span class="dv">1</span>, <span class="co"># mostrar número de mutaciones en las ramas</span></span>
+<span id="cb31-564"><a href="#cb31-564" aria-hidden="true" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Red de haplotipos COI – Libélula&quot;</span>,</span>
+<span id="cb31-565"><a href="#cb31-565" aria-hidden="true" tabindex="-1"></a>  <span class="at">threshold =</span> <span class="dv">0</span></span>
+<span id="cb31-566"><a href="#cb31-566" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-567"><a href="#cb31-567" aria-hidden="true" tabindex="-1"></a><span class="fu">dev.off</span>()</span>
+<span id="cb31-568"><a href="#cb31-568" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb31-569"><a href="#cb31-569" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-570"><a href="#cb31-570" aria-hidden="true" tabindex="-1"></a><span class="fu">## Mapa</span></span>
 <span id="cb31-571"><a href="#cb31-571" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-574"><a href="#cb31-574" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb31-575"><a href="#cb31-575" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 15</span></span>
-<span id="cb31-576"><a href="#cb31-576" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 10</span></span>
-<span id="cb31-577"><a href="#cb31-577" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-578"><a href="#cb31-578" aria-hidden="true" tabindex="-1"></a>ind_hap_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">ind =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">202</span>, <span class="at">hap =</span> ind_hap)</span>
-<span id="cb31-579"><a href="#cb31-579" aria-hidden="true" tabindex="-1"></a>ind_hap_df <span class="ot">&lt;-</span> ind_hap_df <span class="sc">%&gt;%</span></span>
-<span id="cb31-580"><a href="#cb31-580" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb31-581"><a href="#cb31-581" aria-hidden="true" tabindex="-1"></a>    <span class="at">gp =</span> <span class="fu">case_when</span>(</span>
-<span id="cb31-582"><a href="#cb31-582" aria-hidden="true" tabindex="-1"></a>      hap <span class="sc">%in%</span> grupo1 <span class="sc">~</span> <span class="st">&quot;gp1&quot;</span>,</span>
-<span id="cb31-583"><a href="#cb31-583" aria-hidden="true" tabindex="-1"></a>      hap <span class="sc">%in%</span> grupo2 <span class="sc">~</span> <span class="st">&quot;gp2&quot;</span>,</span>
-<span id="cb31-584"><a href="#cb31-584" aria-hidden="true" tabindex="-1"></a>      hap <span class="sc">%in%</span> grupo3 <span class="sc">~</span> <span class="st">&quot;gp3&quot;</span>,</span>
-<span id="cb31-585"><a href="#cb31-585" aria-hidden="true" tabindex="-1"></a>      hap <span class="sc">%in%</span> grupo4 <span class="sc">~</span> <span class="st">&quot;gp4&quot;</span></span>
-<span id="cb31-586"><a href="#cb31-586" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb31-587"><a href="#cb31-587" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb31-588"><a href="#cb31-588" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(ind)</span>
-<span id="cb31-589"><a href="#cb31-589" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-572"><a href="#cb31-572" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-575"><a href="#cb31-575" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb31-576"><a href="#cb31-576" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 15</span></span>
+<span id="cb31-577"><a href="#cb31-577" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 10</span></span>
+<span id="cb31-578"><a href="#cb31-578" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-579"><a href="#cb31-579" aria-hidden="true" tabindex="-1"></a>ind_hap_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">ind =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">202</span>, <span class="at">hap =</span> ind_hap)</span>
+<span id="cb31-580"><a href="#cb31-580" aria-hidden="true" tabindex="-1"></a>ind_hap_df <span class="ot">&lt;-</span> ind_hap_df <span class="sc">%&gt;%</span></span>
+<span id="cb31-581"><a href="#cb31-581" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb31-582"><a href="#cb31-582" aria-hidden="true" tabindex="-1"></a>    <span class="at">gp =</span> <span class="fu">case_when</span>(</span>
+<span id="cb31-583"><a href="#cb31-583" aria-hidden="true" tabindex="-1"></a>      hap <span class="sc">%in%</span> grupo1 <span class="sc">~</span> <span class="st">&quot;gp1&quot;</span>,</span>
+<span id="cb31-584"><a href="#cb31-584" aria-hidden="true" tabindex="-1"></a>      hap <span class="sc">%in%</span> grupo2 <span class="sc">~</span> <span class="st">&quot;gp2&quot;</span>,</span>
+<span id="cb31-585"><a href="#cb31-585" aria-hidden="true" tabindex="-1"></a>      hap <span class="sc">%in%</span> grupo3 <span class="sc">~</span> <span class="st">&quot;gp3&quot;</span>,</span>
+<span id="cb31-586"><a href="#cb31-586" aria-hidden="true" tabindex="-1"></a>      hap <span class="sc">%in%</span> grupo4 <span class="sc">~</span> <span class="st">&quot;gp4&quot;</span></span>
+<span id="cb31-587"><a href="#cb31-587" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb31-588"><a href="#cb31-588" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb31-589"><a href="#cb31-589" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(ind)</span>
 <span id="cb31-590"><a href="#cb31-590" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-591"><a href="#cb31-591" aria-hidden="true" tabindex="-1"></a>metadata_COI <span class="ot">&lt;-</span> metadata_COI <span class="sc">|&gt;</span> <span class="fu">bind_cols</span>(ind_hap_df)</span>
-<span id="cb31-592"><a href="#cb31-592" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-593"><a href="#cb31-593" aria-hidden="true" tabindex="-1"></a><span class="co"># Calcular proporciones de haplotipos por localidad</span></span>
-<span id="cb31-594"><a href="#cb31-594" aria-hidden="true" tabindex="-1"></a>pie_data <span class="ot">&lt;-</span> metadata_COI <span class="sc">%&gt;%</span></span>
-<span id="cb31-595"><a href="#cb31-595" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">hap =</span> <span class="fu">paste0</span>(<span class="st">&quot;hap&quot;</span>, hap)) <span class="sc">|&gt;</span></span>
-<span id="cb31-596"><a href="#cb31-596" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(locCode, Lat, Lon, gp, hap) <span class="sc">%&gt;%</span></span>
-<span id="cb31-597"><a href="#cb31-597" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb31-598"><a href="#cb31-598" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(locCode) <span class="sc">%&gt;%</span></span>
-<span id="cb31-599"><a href="#cb31-599" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">n =</span> n <span class="sc">/</span> <span class="fu">sum</span>(n)) <span class="sc">%&gt;%</span> <span class="co"># normalizar a proporciones</span></span>
-<span id="cb31-600"><a href="#cb31-600" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb31-601"><a href="#cb31-601" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(</span>
-<span id="cb31-602"><a href="#cb31-602" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_from =</span> hap,</span>
-<span id="cb31-603"><a href="#cb31-603" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_from =</span> n,</span>
-<span id="cb31-604"><a href="#cb31-604" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_fill =</span> <span class="dv">0</span></span>
-<span id="cb31-605"><a href="#cb31-605" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb31-606"><a href="#cb31-606" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-607"><a href="#cb31-607" aria-hidden="true" tabindex="-1"></a>hap_cols_ordenados <span class="ot">&lt;-</span> gtools<span class="sc">::</span><span class="fu">mixedsort</span>(<span class="fu">names</span>(pie_data)[<span class="dv">4</span><span class="sc">:</span><span class="fu">ncol</span>(pie_data)])</span>
-<span id="cb31-608"><a href="#cb31-608" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-609"><a href="#cb31-609" aria-hidden="true" tabindex="-1"></a>pie_data <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(pie_data)[, <span class="fu">c</span>(</span>
-<span id="cb31-610"><a href="#cb31-610" aria-hidden="true" tabindex="-1"></a>  <span class="fu">names</span>(pie_data)[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>],</span>
-<span id="cb31-611"><a href="#cb31-611" aria-hidden="true" tabindex="-1"></a>  hap_cols_ordenados</span>
-<span id="cb31-612"><a href="#cb31-612" aria-hidden="true" tabindex="-1"></a>)]</span>
-<span id="cb31-613"><a href="#cb31-613" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-614"><a href="#cb31-614" aria-hidden="true" tabindex="-1"></a><span class="co"># Vector de colores con nombres (hap → color)</span></span>
-<span id="cb31-615"><a href="#cb31-615" aria-hidden="true" tabindex="-1"></a>colores_hap <span class="ot">&lt;-</span> <span class="fu">setNames</span>(colores_df<span class="sc">$</span>color, <span class="fu">paste0</span>(<span class="st">&quot;hap&quot;</span>, colores_df<span class="sc">$</span>hap))</span>
-<span id="cb31-616"><a href="#cb31-616" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-617"><a href="#cb31-617" aria-hidden="true" tabindex="-1"></a><span class="co"># Columnas de haplotipos (todas menos locCode, lat, lon)</span></span>
-<span id="cb31-618"><a href="#cb31-618" aria-hidden="true" tabindex="-1"></a>hap_cols <span class="ot">&lt;-</span> <span class="fu">colnames</span>(pie_data)[<span class="fu">startsWith</span>(<span class="fu">colnames</span>(pie_data), <span class="st">&quot;hap&quot;</span>)]</span>
-<span id="cb31-619"><a href="#cb31-619" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-620"><a href="#cb31-620" aria-hidden="true" tabindex="-1"></a><span class="co"># Generar poligono del mundo</span></span>
-<span id="cb31-621"><a href="#cb31-621" aria-hidden="true" tabindex="-1"></a>mapa_mundo <span class="ot">&lt;-</span> ggplot2<span class="sc">::</span><span class="fu">map_data</span>(<span class="st">&quot;world&quot;</span>)</span>
-<span id="cb31-622"><a href="#cb31-622" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-623"><a href="#cb31-623" aria-hidden="true" tabindex="-1"></a><span class="co"># Mapa</span></span>
-<span id="cb31-624"><a href="#cb31-624" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb31-625"><a href="#cb31-625" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_polygon</span>(</span>
-<span id="cb31-626"><a href="#cb31-626" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> mapa_mundo,</span>
-<span id="cb31-627"><a href="#cb31-627" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">x =</span> long, <span class="at">y =</span> lat, <span class="at">group =</span> group),</span>
-<span id="cb31-628"><a href="#cb31-628" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">&quot;grey85&quot;</span>,</span>
-<span id="cb31-629"><a href="#cb31-629" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">&quot;white&quot;</span>,</span>
-<span id="cb31-630"><a href="#cb31-630" aria-hidden="true" tabindex="-1"></a>    <span class="at">linewidth =</span> <span class="fl">0.2</span></span>
-<span id="cb31-631"><a href="#cb31-631" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb31-632"><a href="#cb31-632" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> pie_data, <span class="fu">aes</span>(<span class="at">x =</span> Lon, <span class="at">y =</span> Lat)) <span class="sc">+</span></span>
-<span id="cb31-633"><a href="#cb31-633" aria-hidden="true" tabindex="-1"></a>  scatterpie<span class="sc">::</span><span class="fu">geom_scatterpie</span>(</span>
-<span id="cb31-634"><a href="#cb31-634" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> pie_data,</span>
-<span id="cb31-635"><a href="#cb31-635" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">x =</span> Lon, <span class="at">y =</span> Lat, <span class="at">r =</span> <span class="fl">0.7</span>),</span>
-<span id="cb31-636"><a href="#cb31-636" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> <span class="fl">0.7</span>,</span>
-<span id="cb31-637"><a href="#cb31-637" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> <span class="fu">colnames</span>(pie_data)[<span class="fu">startsWith</span>(<span class="fu">colnames</span>(pie_data), <span class="st">&quot;hap&quot;</span>)],</span>
-<span id="cb31-638"><a href="#cb31-638" aria-hidden="true" tabindex="-1"></a>    <span class="at">long_format =</span> F</span>
-<span id="cb31-639"><a href="#cb31-639" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb31-640"><a href="#cb31-640" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> colores_hap) <span class="sc">+</span></span>
-<span id="cb31-641"><a href="#cb31-641" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_fixed</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">120</span>, <span class="sc">-</span><span class="dv">80</span>), <span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">42</span>)) <span class="sc">+</span></span>
-<span id="cb31-642"><a href="#cb31-642" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb31-643"><a href="#cb31-643" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;Distribución de haplotipos COI por localidad&quot;</span>,</span>
-<span id="cb31-644"><a href="#cb31-644" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">&quot;Longitud&quot;</span>,</span>
-<span id="cb31-645"><a href="#cb31-645" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;Latitud&quot;</span>,</span>
-<span id="cb31-646"><a href="#cb31-646" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">&quot;Haplotipo&quot;</span></span>
-<span id="cb31-647"><a href="#cb31-647" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb31-648"><a href="#cb31-648" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>(<span class="at">base_size =</span> <span class="dv">13</span>) <span class="sc">+</span></span>
-<span id="cb31-649"><a href="#cb31-649" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;none&quot;</span>)</span>
-<span id="cb31-650"><a href="#cb31-650" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb31-591"><a href="#cb31-591" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-592"><a href="#cb31-592" aria-hidden="true" tabindex="-1"></a>metadata_COI <span class="ot">&lt;-</span> metadata_COI <span class="sc">|&gt;</span> <span class="fu">bind_cols</span>(ind_hap_df)</span>
+<span id="cb31-593"><a href="#cb31-593" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-594"><a href="#cb31-594" aria-hidden="true" tabindex="-1"></a><span class="co"># Calcular proporciones de haplotipos por localidad</span></span>
+<span id="cb31-595"><a href="#cb31-595" aria-hidden="true" tabindex="-1"></a>pie_data <span class="ot">&lt;-</span> metadata_COI <span class="sc">%&gt;%</span></span>
+<span id="cb31-596"><a href="#cb31-596" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">hap =</span> <span class="fu">paste0</span>(<span class="st">&quot;hap&quot;</span>, hap)) <span class="sc">|&gt;</span></span>
+<span id="cb31-597"><a href="#cb31-597" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(locCode, Lat, Lon, gp, hap) <span class="sc">%&gt;%</span></span>
+<span id="cb31-598"><a href="#cb31-598" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb31-599"><a href="#cb31-599" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(locCode) <span class="sc">%&gt;%</span></span>
+<span id="cb31-600"><a href="#cb31-600" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">n =</span> n <span class="sc">/</span> <span class="fu">sum</span>(n)) <span class="sc">%&gt;%</span> <span class="co"># normalizar a proporciones</span></span>
+<span id="cb31-601"><a href="#cb31-601" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb31-602"><a href="#cb31-602" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(</span>
+<span id="cb31-603"><a href="#cb31-603" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_from =</span> hap,</span>
+<span id="cb31-604"><a href="#cb31-604" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_from =</span> n,</span>
+<span id="cb31-605"><a href="#cb31-605" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_fill =</span> <span class="dv">0</span></span>
+<span id="cb31-606"><a href="#cb31-606" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb31-607"><a href="#cb31-607" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-608"><a href="#cb31-608" aria-hidden="true" tabindex="-1"></a>hap_cols_ordenados <span class="ot">&lt;-</span> gtools<span class="sc">::</span><span class="fu">mixedsort</span>(<span class="fu">names</span>(pie_data)[<span class="dv">4</span><span class="sc">:</span><span class="fu">ncol</span>(pie_data)])</span>
+<span id="cb31-609"><a href="#cb31-609" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-610"><a href="#cb31-610" aria-hidden="true" tabindex="-1"></a>pie_data <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(pie_data)[, <span class="fu">c</span>(</span>
+<span id="cb31-611"><a href="#cb31-611" aria-hidden="true" tabindex="-1"></a>  <span class="fu">names</span>(pie_data)[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>],</span>
+<span id="cb31-612"><a href="#cb31-612" aria-hidden="true" tabindex="-1"></a>  hap_cols_ordenados</span>
+<span id="cb31-613"><a href="#cb31-613" aria-hidden="true" tabindex="-1"></a>)]</span>
+<span id="cb31-614"><a href="#cb31-614" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-615"><a href="#cb31-615" aria-hidden="true" tabindex="-1"></a><span class="co"># Vector de colores con nombres (hap → color)</span></span>
+<span id="cb31-616"><a href="#cb31-616" aria-hidden="true" tabindex="-1"></a>colores_hap <span class="ot">&lt;-</span> <span class="fu">setNames</span>(colores_df<span class="sc">$</span>color, <span class="fu">paste0</span>(<span class="st">&quot;hap&quot;</span>, colores_df<span class="sc">$</span>hap))</span>
+<span id="cb31-617"><a href="#cb31-617" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-618"><a href="#cb31-618" aria-hidden="true" tabindex="-1"></a><span class="co"># Columnas de haplotipos (todas menos locCode, lat, lon)</span></span>
+<span id="cb31-619"><a href="#cb31-619" aria-hidden="true" tabindex="-1"></a>hap_cols <span class="ot">&lt;-</span> <span class="fu">colnames</span>(pie_data)[<span class="fu">startsWith</span>(<span class="fu">colnames</span>(pie_data), <span class="st">&quot;hap&quot;</span>)]</span>
+<span id="cb31-620"><a href="#cb31-620" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-621"><a href="#cb31-621" aria-hidden="true" tabindex="-1"></a><span class="co"># Generar poligono del mundo</span></span>
+<span id="cb31-622"><a href="#cb31-622" aria-hidden="true" tabindex="-1"></a>mapa_mundo <span class="ot">&lt;-</span> ggplot2<span class="sc">::</span><span class="fu">map_data</span>(<span class="st">&quot;world&quot;</span>)</span>
+<span id="cb31-623"><a href="#cb31-623" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-624"><a href="#cb31-624" aria-hidden="true" tabindex="-1"></a><span class="co"># Mapa</span></span>
+<span id="cb31-625"><a href="#cb31-625" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb31-626"><a href="#cb31-626" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_polygon</span>(</span>
+<span id="cb31-627"><a href="#cb31-627" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> mapa_mundo,</span>
+<span id="cb31-628"><a href="#cb31-628" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">x =</span> long, <span class="at">y =</span> lat, <span class="at">group =</span> group),</span>
+<span id="cb31-629"><a href="#cb31-629" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">&quot;grey85&quot;</span>,</span>
+<span id="cb31-630"><a href="#cb31-630" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">&quot;white&quot;</span>,</span>
+<span id="cb31-631"><a href="#cb31-631" aria-hidden="true" tabindex="-1"></a>    <span class="at">linewidth =</span> <span class="fl">0.2</span></span>
+<span id="cb31-632"><a href="#cb31-632" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb31-633"><a href="#cb31-633" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> pie_data, <span class="fu">aes</span>(<span class="at">x =</span> Lon, <span class="at">y =</span> Lat)) <span class="sc">+</span></span>
+<span id="cb31-634"><a href="#cb31-634" aria-hidden="true" tabindex="-1"></a>  scatterpie<span class="sc">::</span><span class="fu">geom_scatterpie</span>(</span>
+<span id="cb31-635"><a href="#cb31-635" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> pie_data,</span>
+<span id="cb31-636"><a href="#cb31-636" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">x =</span> Lon, <span class="at">y =</span> Lat, <span class="at">r =</span> <span class="fl">0.7</span>),</span>
+<span id="cb31-637"><a href="#cb31-637" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> <span class="fl">0.7</span>,</span>
+<span id="cb31-638"><a href="#cb31-638" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> <span class="fu">colnames</span>(pie_data)[<span class="fu">startsWith</span>(<span class="fu">colnames</span>(pie_data), <span class="st">&quot;hap&quot;</span>)],</span>
+<span id="cb31-639"><a href="#cb31-639" aria-hidden="true" tabindex="-1"></a>    <span class="at">long_format =</span> F</span>
+<span id="cb31-640"><a href="#cb31-640" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb31-641"><a href="#cb31-641" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> colores_hap) <span class="sc">+</span></span>
+<span id="cb31-642"><a href="#cb31-642" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_fixed</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">120</span>, <span class="sc">-</span><span class="dv">80</span>), <span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">42</span>)) <span class="sc">+</span></span>
+<span id="cb31-643"><a href="#cb31-643" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb31-644"><a href="#cb31-644" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;Distribución de haplotipos COI por localidad&quot;</span>,</span>
+<span id="cb31-645"><a href="#cb31-645" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">&quot;Longitud&quot;</span>,</span>
+<span id="cb31-646"><a href="#cb31-646" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;Latitud&quot;</span>,</span>
+<span id="cb31-647"><a href="#cb31-647" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">&quot;Haplotipo&quot;</span></span>
+<span id="cb31-648"><a href="#cb31-648" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb31-649"><a href="#cb31-649" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>(<span class="at">base_size =</span> <span class="dv">13</span>) <span class="sc">+</span></span>
+<span id="cb31-650"><a href="#cb31-650" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;none&quot;</span>)</span>
+<span id="cb31-651"><a href="#cb31-651" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 </code><button title="Copiar al portapapeles" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

@@ -21,6 +21,7 @@ execute:
   warning: false
   message: false
 lang: es
+output-file: index.html
 ---
 
 # Introducción

@@ -1,0 +1,613 @@
+---
+title: "Laboratorio de Filogeografía: Género *Hamadryas*"
+subtitle: "Replica del artículo Vega-Sanchez et al., 2019"
+author: "Laboratorio de Filogeografía"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-title: "Contenido"
+    number-sections: true
+    theme: cosmo
+    highlight-style: github
+    code-fold: false
+    code-tools: true
+    fig-width: 8
+    fig-height: 5
+    embed-resources: true
+    code-overflow: wrap
+execute:
+  warning: false
+  message: false
+lang: es
+---
+
+# Introducción
+
+Vamos a realizar una práctica de análisis básicos de filogeografía, tratando de replicar algunos de los resultados del artículo de [Vega-Sánchez et al., 2019](https://doi.org/10.1016/j.ympev.2019.106536). En este artículo se utilizaron secuencias COI e ITS de libélulas de la especie *Hetaerina americana*.
+
+:::{.callout-note title="Preguntas"}
+
+1. ¿Cuáles eran las preguntas de investigación del artículo?
+
+2. ¿Cuál es el resultado principal?
+
+:::
+
+Nos enfocaremos en algunos de a análisis que se realizaron con las secuencias del COI. 
+
+## Objetivos
+
+1. Descargar las secuencias
+2. Obtener metadatos geográficos
+3. Alinear secuencias y cortar regiones con datos faltantes
+4. Identificar haplotipos
+5. Obtener medidas básicas de diversidad genética 
+6. Explorar la estructura genética mediante un análisis AMOVA
+7. Explorar las relaciones entre haplotipos mediante una red de haplotipos 
+8. Comparar las relaciones en la red con su distribución en el mapa.
+
+## Paquetes necesarios
+
+```{r}
+#| label: instalar-paquetes
+#| eval: false
+
+# Instalar paquetes desde CRAN
+install.packages(c(
+  "bold",        
+  "rentrez",     
+  "ape",         
+  "seqinr",      
+  "stringr",     
+  "dplyr",       
+  "tidyr",       
+  "ggplot2",     
+  "knitr",       
+  "kableExtra",  
+  "here",        
+  "fs",          
+  "pegas",       
+  "adegenet",    
+  "poppr",       
+  "RColorBrewer",
+  "maps",        
+  "scatterpie",  
+  "gtools"       
+))
+
+# Instalar paquetes desde Bioconductor
+if (!require("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
+
+BiocManager::install(c(
+  "Biostrings",  
+  "msa"          
+))
+```
+
+```{r}
+#| label: cargar-paquetes
+#| message: false
+
+library(bold)       # Herramientas para descargar secuencias de la base de datos BOLD (Barcode of Life)
+library(rentrez)    # Interfaz para consultar y descargar secuencias de NCBI (GenBank)
+
+library(ape)        # Manipulación de secuencias y análisis filogenéticos (DNAbin, distancias genéticas, árboles)
+library(Biostrings) # Manejo eficiente de secuencias biológicas (DNAStringSet, lectura y manipulación de FASTA)
+library(msa)        # Alineamiento múltiple de secuencias (MUSCLE, ClustalW, ClustalOmega)
+library(pegas)      # Análisis de genética poblacional y filogeografía (haplotipos, redes haplotípicas)
+library(adegenet)   # Análisis multivariado de datos genéticos (estructuración poblacional, objetos genéticos)
+library(poppr)      # Análisis de diversidad genética y clonación en poblaciones
+
+library(stringr)    # Manipulación de cadenas de texto (nombres de secuencias, metadatos)
+library(dplyr)      # Manipulación y filtrado de tablas de datos
+library(tidyr)      # Reorganización de datos (pivotar, separar o combinar columnas)
+library(gtools)     # Funciones auxiliares para manipulación de datos (por ejemplo ordenamiento natural)
+
+library(ggplot2)    # Visualización de datos y generación de gráficos
+library(RColorBrewer) # Paletas de colores para visualización de datos
+library(scatterpie) # Gráficos de pastel sobre mapas o coordenadas (ej. frecuencias de haplotipos)
+
+library(knitr)      # Generación de tablas y reportes reproducibles
+library(kableExtra) # Mejora estética de tablas en HTML o PDF
+
+library(here)       # Manejo de rutas relativas dentro de proyectos reproducibles
+library(fs)         # Manejo de archivos y directorios (crear, listar, verificar rutas)
+
+```
+
+### Paquetes que vale la pena estudiar para análisis genéticos
+
+- [Adegenet](https://adegenet.r-forge.r-project.org/)
+- [Biostrings](https://bioconductor.org/packages/release/bioc/html/Biostrings.html)
+- [pegas](https://emmanuelparadis.github.io/pegas.html) 
+  - Hay un libro de texto que se llama [Population genetics with R](https://emmanuelparadis.github.io/PGR.html) con el que pueden practicar
+- [ape](https://github.com/emmanuelparadis/ape)
+  - Hay un libro de texto que se llama [Analysis of Phylogenetics and Evolution with R](https://emmanuelparadis.github.io/APER.html)
+
+
+¿Qué estudiar?
+  
+  - ¿Cuál es la estructura de los objetos principales de cada paquete? 
+  - ¿Cómo puedo manipular las distintas partes?
+  - ¿Cómo transformar entre ellos?
+  - ¿Qué cosas puedo hacer con cada uno?
+
+## Organización del proyecto 
+
+1. Vamos a generar la estructura de directorios. 
+
+```{r}
+#| echo: false
+#| message: false
+
+fs::dir_tree("hetaerina_lab", recurse = F)
+```
+
+
+```{r}
+#| label: crear-directorios
+#| eval: false
+
+# Crear estructura de carpetas del proyecto
+dirs <- c(
+  "hetaerina_lab/00_raw_sequences",
+  "hetaerina_lab/01_metadata",
+  "hetaerina_lab/02_aligned",
+  "hetaerina_lab/03_outputs"
+)
+
+for (d in dirs) {
+  if (!dir.exists(d)) dir.create(d, recursive = TRUE)
+}
+```
+
+## Descarga de los datos
+
+En el material suplementario del artículo, en la tabla S1 podemos encontrar los números de acceso de las secuencias COI e ITS de las libélulas 
+
+Primero vamos a generar un vector con todos los números de acceso de *H. americana* 
+
+Nota: Solo vamos a trabajar con las localidades con números de acceso de GeneBank. Las otras secuencias las obtuvieron de otra base de datos llamada BOLD.
+
+```{r}
+#| eval: false
+
+# H. americana - COI
+# MH084732-MH084741, and MH090478-MH090669
+
+acc1 <- paste0("MH", sprintf("%06d", 84732:84741))
+
+acc2 <- paste0("MH", sprintf("%06d", 90478:90669))
+
+acc_COI <- c(acc1, acc2)
+acc_ITS <- paste0("MH", sprintf("%06d", 90377:90477))
+```
+
+Para descargar secuencias de GeneBank se utiliza el paquete `rentrez`. Necesitan crear una [cuenta](https://www.ncbi.nlm.nih.gov/myncbi/) en GeneBank para poder generar una clave API que les permita descargar las secuencias. 
+
+```{r}
+#| eval: false
+
+ncbi_key <- Sys.getenv("NCBI_API_KEY") # Ustedes pueden sustituir este codigo por ncbi_key <- "API_KEY"
+
+rentrez::set_entrez_key(ncbi_key)
+
+fasta_lote_COI <- rentrez::entrez_fetch(
+  db = "nucleotide",
+  id = acc_COI,
+  rettype = "fasta"
+)
+
+write(
+  fasta_lote_COI,
+  file = file.path(
+    here(),
+    "hetaerina_lab/00_raw_sequences/raw_H_americana_COI.fasta"
+  )
+)
+
+# Código por si quieren descargar las secuencias ITS y probar
+# fasta_lote_ITS <- rentrez::entrez_fetch(
+#     db = "nucleotide",
+#     id = acc_ITS,
+#     rettype = "fasta"
+# )
+
+# write(
+#   fasta_lote_ITS,
+#   file = file.path(
+#     here(),
+#     "hetaerina_lab/00_raw_sequences/raw_H_americana_ITS.fasta"
+#   )
+# )
+```
+
+### Descargar metadatos
+
+
+```{r}
+#| eval: false
+
+metadatos_COI_raw <- rentrez::entrez_summary(db = "nucleotide", id = acc_COI)
+
+metadata_COI_ls <- list()
+
+for (rec in metadatos_COI_raw) {
+  metadata_COI_ls[[rec$uid]] <- data.frame(
+    accession = rec$accessionversion, # Numero de acceso
+    title = rec$title, # encabezado de la secuencia
+    taxid = rec$taxid, # id de la especie
+    slen = rec$slen, # longitud de la secuencia
+    organism = rec$organism # nombre del organismo
+  )
+}
+
+metadata_COI <- bind_rows(metadata_COI_ls)
+
+metadata_COI <- mutate(
+  metadata_COI,
+  locCode = str_extract(title, "(?<=Ham)[:alpha:]{1,}"),
+  sampleID = as.numeric(str_extract(title, "(?<=Ham[[:alpha:]]{1,3})\\d{1,}")),
+  sampleID = sprintf("%02d", sampleID)
+)
+```
+
+
+
+### Unir metadatos geográficos
+
+```{r}
+#| eval: false
+
+## Datos geograficos
+
+geo_data <- read.table(
+  "hetaerina_lab/01_metadata/metadata_geo.tsv",
+  sep = "\t",
+  header = T
+)
+
+metadata_COI <- metadata_COI |> left_join(geo_data, by = c("locCode" = "Code"))
+
+write.csv(
+  metadata_COI,
+  "hetaerina_lab/01_metadata/metadata_COI.csv",
+  row.names = F
+)
+
+metadata_ITS <- metadata_ITS |> left_join(geo_data, by = c("locCode" = "Code"))
+
+write.csv(
+  metadata_ITS,
+  "hetaerina_lab/01_metadata/metadata_ITS.csv",
+  row.names = F
+)
+```
+
+
+## Alineamiento
+
+
+```{r}
+coi <- Biostrings::readDNAStringSet("hetaerina_lab/00_raw_sequences/raw_H_americana_COI.fasta")
+
+# Ejecutar MUSCLE a través del paquete msa
+coiAlign <- msa::msa(
+  inputSeqs = coi,
+  method    = "Muscle",  # Alternativas: "ClustalW", "ClustalOmega"
+  verbose   = FALSE,
+  type = "dna"
+)
+```
+
+## Inspección visual del alineamiento
+
+```{r}
+coiAlign_dnaBin <- msa::msaConvert(coiAlign, type = "ape::DNAbin")
+rownames(coiAlign_dnaBin) <- str_extract(
+  rownames(coiAlign_dnaBin),
+  "Ham\\w{1,}\\d{1,}"
+)
+```
+
+```{r}
+#| eval: false
+pdf("hetaerina_lab/03_outputs/alignment_check.pdf", width = 10, height = 7, )
+  ape::checkAlignment(coiAlign_dnaBin, what = 1)
+  ape::checkAlignment(coiAlign_dnaBin, what = 2)
+  ape::checkAlignment(coiAlign_dnaBin, what = 3)
+  ape::checkAlignment(coiAlign_dnaBin, what = 4)
+dev.off()
+```
+
+Recortar partes de las secuencias que tienen muchos datos faltantes
+
+```{r}
+# Porcentaje de gaps por posición
+
+aln_matrix <- as.character(coiAlign_dnaBin)
+
+gaps_por_col <- apply(aln_matrix, 2, function(col) {
+  mean(col == "-" | col == "n") * 100
+})
+
+cols_conservar <- which(gaps_por_col < 50)
+
+coiAlign_trim <- coiAlign_dnaBin[, cols_conservar]
+
+ape::write.dna(
+  coiAlign_trim,
+  file = "hetaerina_lab/02_aligned/alignment_coi_trimmed.fasta",
+  format = "fasta"
+)
+
+ape::checkAlignment(coiAlign_trim, what = 1)
+```
+
+## Transformación de datos
+
+Recuperamos los haplotipos del alineamiento
+
+
+```{r}
+
+
+coiAlign_trim <- ape::read.dna("hetaerina_lab/02_aligned/alignment_coi_trimmed.fasta", format = "fasta")
+
+coiHaplo <- pegas::haplotype(coiAlign_trim)
+coiHaplo
+```
+
+# Estadísticos de diversidad
+
+## Diversidad haplotípica y nucleotídica
+
+Para caracterizar la variación genética del conjunto de secuencias analizamos tres estadísticas comúnmente utilizadas en estudios de genética de poblaciones y filogeografía: la diversidad haplotípica (Hd), la diversidad nucleotídica (π) y la D de Tajima.
+
+La diversidad haplotípica (Hd) mide la probabilidad de que dos secuencias elegidas al azar en la muestra correspondan a haplotipos distintos. Este estadístico refleja tanto el número de haplotipos presentes como la distribución de sus frecuencias en la muestra. Valores altos de Hd indican la presencia de múltiples haplotipos o una distribución relativamente equitativa de sus frecuencias.
+
+La diversidad nucleotídica (π) representa el número promedio de diferencias nucleotídicas por sitio entre pares de secuencias de la muestra. Esta métrica proporciona una medida directa del grado de divergencia genética a nivel de nucleótidos dentro del conjunto de datos.
+
+Finalmente, calculamos la D de Tajima, una prueba estadística que compara diferentes estimadores de la diversidad genética basados en el número de sitios segregantes y en las diferencias promedio entre secuencias. Este estadístico permite evaluar desviaciones del modelo neutral de evolución que pueden deberse a procesos demográficos (como expansiones poblacionales o cuellos de botella) o a la acción de la selección natural.
+
+
+```{r}
+Hd <- pegas::hap.div(coiHaplo, variance=TRUE)
+Pi <- pegas::nuc.div(coiHaplo, variance = TRUE)
+Dtajima <- pegas::tajima.test(coiHaplo)
+
+Hd
+Pi
+Dtajima
+```
+
+## Diferenciación genética
+
+
+```{r}
+
+
+coi_genind <- adegenet::DNAbin2genind(coiAlign_trim)
+
+
+metadata_COI <- read.csv("hetaerina_lab/01_metadata/metadata_COI.csv")
+metadata_COI$locCode <- as.factor(metadata_COI$locCode)
+
+adegenet::strata(coi_genind) <- metadata_COI
+adegenet::setPop(coi_genind) <- ~locCode
+
+coi_genind
+```
+
+### Análisis de varianza molecular AMOVA
+
+
+```{r}
+
+amova_pop <- poppr::poppr.amova(coi_genind, hier = ~locCode, within=FALSE, method = "ade4")
+
+amova_pop
+```
+
+### Redes de haplotipos
+
+
+```{r}
+rownames(coiHaplo) <- as.numeric(as.roman(rownames(coiHaplo)))
+red <- pegas::haploNet(coiHaplo)
+
+
+freq_hap <- summary(coiHaplo)
+names(freq_hap) <- as.numeric(as.roman(names(freq_hap)))
+
+# ¿Qué haplotipo tiene cada individuo?
+tmp <- stack(setNames(attr(coiHaplo, "index"), rownames(coiHaplo))) # recuperar qué secuencia pertenece a qué haplotipo
+
+ind_hap <- tapply(as.integer(tmp$ind), tmp$values, identity) # Agrupar los haplotipos usando como índice los indiviuos, es decir, generar un objeto en el que podamos saber qué haplotipo tiene cada individuo.
+
+# Asignar colores a cada pais
+countries <- metadata_COI$Country # Vamos a colorear los haplotipos por pais
+
+countries <- factor(countries, levels = unique(countries))
+
+n_countries <- length(unique(countries)) # Numero de localidades
+paleta <- RColorBrewer::brewer.pal(min(n_countries, 8), "Set1") # Asignar un color a cada pais
+colores_countries <- setNames(
+  paleta[as.integer(as.factor(unique(n_countries)))],
+  unique(n_countries)
+)
+
+# Matriz de proporción por haplotipo
+prop_matriz <- ind_hap |>
+  lapply(function(idx) table(countries[idx]) / length(idx)) |>
+  bind_rows() |>
+  as.matrix()
+
+# Graficar
+plot(
+  red,
+  size = freq_hap * 10, # tamaño de los haplotipos proporcional a su frecuencia
+  pie = prop_matriz, # Asignar los colores por pais (usando graficas de pie)
+  bg = paleta,
+  legend = c(100, -10),
+  show.mutation = 1, # mostrar número de mutaciones en las ramas
+  main = "Red de haplotipos COI – Libélula"
+)
+```
+
+Para modificar las coordenadas, en una terminal vamos a correr el script `mini_code_redhap.R`, después vamos a modificar las coordenadas y guardarlas en un nuevo objeto.
+
+```{r}
+#| eval: false
+
+# Primero abrir la terminal, abrir R y correr:
+source("mini_code_redhap.R")  # carga la red
+
+# Posteriormente correr:
+coords_red <- pegas::replot()  # abre ventana interactiva
+saveRDS(coords_red, "hetaerina_lab/03_outputs/coords_red_haplotipos_modificadas.rds")
+```
+
+```{r}
+#| fig-width: 15
+#| fig-height: 10
+# Graficar
+
+coords_manual <- readRDS(
+  "hetaerina_lab/03_outputs/coords_red_haplotipos_modificadas.rds"
+)
+
+grupo3 <- c(31:46)
+grupo4 <- c(47:62)
+grupo2 <- c(29, 30)
+grupo1 <- setdiff(1:62, c(grupo4, grupo2, grupo3))
+
+# Función personalizada para generar paleta por grupo
+asignar_colores <- function(haps, paleta_base) {
+  colores <- grDevices::colorRampPalette(paleta_base)(length(haps))
+  return(data.frame(hap = haps, color = colores))
+}
+
+# Definir paletas base por grupo
+colores_df <- bind_rows(
+  asignar_colores(grupo1, c("#9cf989", "#006600")), # verdes
+  asignar_colores(grupo2, c("#ffff99", "#e8d64e")), # amarillos
+  asignar_colores(grupo3, c("#ffcccc", "#cc0000")), # rojos
+  asignar_colores(grupo4, c("#cce0ff", "#003399")) # azules
+)
+
+mod_freq_hap <- ifelse(freq_hap > 30, freq_hap * 1.5, (log1p(freq_hap)) * 15)
+
+
+plot(
+  red,
+  size = mod_freq_hap,
+  bg = colores_df$color,
+  xy = coords_manual,
+  show.mutation = 1,
+  main = "Red de haplotipos COI – Libélula",
+  threshold = 0
+)
+```
+
+```{r}
+#| eval: false
+
+pdf("hetaerina_lab/03_outputs/red_haplotipos_COI.pdf", width = 15, height = 10)
+# Graficar
+plot(
+  red,
+  size = mod_freq_hap, # tamaño de los haplotipos proporcional a su frecuencia
+  bg = colores_df$color,
+  xy = coords_manual,
+  show.mutation = 1, # mostrar número de mutaciones en las ramas
+  main = "Red de haplotipos COI – Libélula",
+  threshold = 0
+)
+dev.off()
+```
+
+## Mapa
+
+
+```{r}
+#| fig-width: 15
+#| fig-height: 10
+
+ind_hap_df <- data.frame(ind = 1:202, hap = ind_hap)
+ind_hap_df <- ind_hap_df %>%
+  mutate(
+    gp = case_when(
+      hap %in% grupo1 ~ "gp1",
+      hap %in% grupo2 ~ "gp2",
+      hap %in% grupo3 ~ "gp3",
+      hap %in% grupo4 ~ "gp4"
+    )
+  ) %>%
+  arrange(ind)
+
+
+metadata_COI <- metadata_COI |> bind_cols(ind_hap_df)
+
+# Calcular proporciones de haplotipos por localidad
+pie_data <- metadata_COI %>%
+  mutate(hap = paste0("hap", hap)) |>
+  group_by(locCode, Lat, Lon, gp, hap) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(locCode) %>%
+  mutate(n = n / sum(n)) %>% # normalizar a proporciones
+  ungroup() %>%
+  pivot_wider(
+    names_from = hap,
+    values_from = n,
+    values_fill = 0
+  )
+
+hap_cols_ordenados <- gtools::mixedsort(names(pie_data)[4:ncol(pie_data)])
+
+pie_data <- as.data.frame(pie_data)[, c(
+  names(pie_data)[1:3],
+  hap_cols_ordenados
+)]
+
+# Vector de colores con nombres (hap → color)
+colores_hap <- setNames(colores_df$color, paste0("hap", colores_df$hap))
+
+# Columnas de haplotipos (todas menos locCode, lat, lon)
+hap_cols <- colnames(pie_data)[startsWith(colnames(pie_data), "hap")]
+
+# Generar poligono del mundo
+mapa_mundo <- ggplot2::map_data("world")
+
+# Mapa
+ggplot() +
+  geom_polygon(
+    data = mapa_mundo,
+    aes(x = long, y = lat, group = group),
+    fill = "grey85",
+    color = "white",
+    linewidth = 0.2
+  ) +
+  geom_point(data = pie_data, aes(x = Lon, y = Lat)) +
+  scatterpie::geom_scatterpie(
+    data = pie_data,
+    aes(x = Lon, y = Lat, r = 0.7),
+    alpha = 0.7,
+    cols = colnames(pie_data)[startsWith(colnames(pie_data), "hap")],
+    long_format = F
+  ) +
+  scale_fill_manual(values = colores_hap) +
+  coord_fixed(xlim = c(-120, -80), ylim = c(10, 42)) +
+  labs(
+    title = "Distribución de haplotipos COI por localidad",
+    x = "Longitud",
+    y = "Latitud",
+    fill = "Haplotipo"
+  ) +
+  theme_classic(base_size = 13) +
+  theme(legend.position = "none")
+```

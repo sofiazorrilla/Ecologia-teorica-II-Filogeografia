@@ -1,0 +1,12 @@
+# Material para ignorar 
+hamadryas/
+material_cucu/
+SNPs.qmd
+Vega-Sanchez2019/
+
+# Archivos para ignorar
+.Renviron
+.Rhistory
+.vscode
+.Rproj.user
+.cspell

@@ -1,0 +1,197 @@
+---
+title: "Laboratorio de Filogeografía: Género *Hamadryas*"
+subtitle: "Basado en el artículo Vega-Sanchez et al., 2023 y Vega-Sanchez et al., 2019"
+author: "Laboratorio de Filogeografía"
+date: today
+format: typst
+  #  html:
+  #   toc: true
+  #   toc-depth: 3
+  #   toc-title: "Contenido"
+  #   number-sections: true
+  #   theme: cosmo
+  #   highlight-style: github
+  #   code-fold: false
+  #   code-tools: true
+  #   fig-width: 8
+  #   fig-height: 5
+  #   embed-resources: true
+  #   code-overflow: wrap
+execute:
+  warning: false
+  message: false
+lang: es
+output-file: index.html
+---
+
+# Introducción
+
+## Objetivos 
+
+# Preparación de datos de entrada
+---
+
+## Paquetes necesarios
+
+```{r}
+ library(adegenet)
+ library(pegas)
+ library(tibble)
+ library(poppr)
+ library(dplyr)
+ library(hierfstat)
+ library(reshape2)
+ library(ggplot2)
+ library(LEA)
+ library(rworldmap)
+ library(maptools)
+ library(ggsn)
+ library(vegan)
+ library(raster)
+ library(ggpubr)
+ library(tidyverse)
+
+
+
+```
+
+## Importación de datos
+
+Prmero vamos a recordar la estructura de nuestro proyecto. 
+
+```{r}
+#| echo: false
+#| message: false
+
+fs::dir_tree("hetaerina_lab")
+```
+
+Los datos que vamos a utilizar están guardados en el archivo `micros_hetaerina.csv`. Los vamos a leer como `data.frame`.
+
+Las primeras columnas contienen información sobre cada individuo: la población donde fue colectado, el código de la población, el morfo y el identificador del individuo.
+
+Después aparecen las columnas que comienzan con H, que corresponden a los genotipos en cada locus (cada columna representa un locus distinto). Los números indican el tamaño de los microsatélites detectados para ese individuo en ese locus.
+
+```{r}
+micros <- read.csv("hetaerina_lab/00_raw_data/micros_hetaerina.csv") |>
+  mutate(across(c(Poblacion, morfo, pops, Individuo), factor))
+
+rownames(micros) <- micros$Individuo
+
+as_tibble(micros)
+
+str(micros) #Muestra la estructura del data frame: número de filas, columnas, tipo de cada variable, y un vistazo a sus valores
+
+```
+
+Ahora vamos a convertir este objeto en uno de clase `genind` del paquete `adegenet`.
+
+
+```{r}
+?`genind-class`
+
+micros_genind <- adegenet::df2genind(
+  X = micros[, -c(1:4)],
+  sep = ":",
+  NA.char = "NA",
+  ind.names = micros$Individuo,
+  ploidy = 2,
+  type = "codom",
+)
+
+strata(micros_genind) <- micros[, 1:4]
+setPop(micros_genind) <- ~pops
+
+micros_genind
+
+summary(micros_genind)
+
+```
+
+Componentes del objeto genind. 
+
+Por el tipo de objeto que es genind, para acceder a las distintas partes debemos usar `@`
+
+```{r}
+str(micros_genind,2)
+
+head(micros_genind@tab)
+```
+
+# Análisis
+
+## Diversidad genética
+
+### Poner a prueba la neutralidad de los loci
+
+Cuando trabajamos con microsatélites asumimos que sus frecuencias están gobernadas por procesos neutrales y que los loci se encuentran en equilibrio de Hardy–Weinberg.
+
+Para verificar que los alelos de los loci fueron correctamente identificados y que no están afectados por procesos como selección o desequilibrio de ligamiento, es necesario realizar una prueba estadística. Una forma común es aplicar una prueba de χ².
+
+Esta prueba evalúa qué tan probable es observar en nuestra muestra las frecuencias genotípicas obtenidas (o unas aún más extremas) si la población realmente estuviera en equilibrio de Hardy–Weinberg.
+
+Si usamos un nivel de confianza de 95% (α = 0.05), entonces las poblaciones con p < 0.05 muestran una probabilidad muy baja de producir esa distribución de frecuencias alélicas bajo el supuesto de equilibrio de Hardy–Weinberg. Por lo tanto, en estos casos rechazamos la hipótesis de equilibrio y consideramos que esas poblaciones probablemente no se encuentran en equilibrio.
+
+
+```{r}
+round(pegas::hw.test(micros_genind, B = 1000), digits = 3)
+```
+
+
+```{r}
+HWE.test <- data.frame(
+  sapply(seppop(micros_genind), function(ls) pegas::hw.test(ls, B = 1000)[, 3])
+)
+
+HWE.test.chisq <- t(data.matrix(HWE.test))
+
+{
+  cat("Chi-squared test (p-values):", "\n")
+  round(HWE.test.chisq, 3)
+}
+```
+
+¿Qué proporción de los loci están fuera del equilibrio HW en cada población?
+
+
+```{r}
+alpha = 0.05 # Define el nivel de significancia. Un locus se considera fuera de HWE si p < α.
+
+# Aqui vamos a utilizar un truco:
+
+# Para cada fila revisamos cuántas celdas cumplen la condición HWE.test.chisq < α. Esto genera un vector de valores lógicos (TRUE o FALSE). Si convertimos ese vector a valores numéricos, TRUE = 1 y FALSE = 0.
+
+# Para obtener la proporción de loci que cumplen la condición, podríamos contar los que sí la cumplen y dividirlos entre el número total de loci. Sin embargo, esta operación es equivalente a sumar los valores TRUE (que ahora valen 1) y calcular su promedio.
+
+Prop.pops.out.of.HWE <- data.frame(
+  Chisq = apply(HWE.test.chisq < alpha, 1, mean)
+)
+
+Prop.pops.out.of.HWE
+```
+
+Aquí los investigadores tienen que decidir si continúan utilizando todos los loci, aun sabiendo que los modelos asumen que estos deben estar en equilibrio de Hardy–Weinberg, o si es mejor eliminar algunos individuos, loci o incluso poblaciones.
+
+En este artículo tenían la ventaja de contar con varios tipos de datos: secuencias de COI, secuencias nucleares y microsatélites. Por eso es probable que hayan decidido continuar utilizando todos los loci. Sin embargo, este tipo de decisiones debería discutirse al interpretar los resultados: ¿qué tanto podríamos esperar que la falta de equilibrio afecte las inferencias del estudio?
+
+### Riqueza rarefaccionada de alelos
+
+La riqueza corresponde al número de alelos y muchas veces nos interesa compararla entre distintas regiones o poblaciones. Sin embargo, cuando los tamaños de muestra no son iguales, esta comparación no es justa, ya que esperaríamos encontrar más alelos simplemente porque se muestrearon más individuos.
+
+Por lo tanto, podemos calcular la riqueza rarefaccionada, que consiste en estimar cuántos alelos esperaríamos encontrar si todas las poblaciones tuvieran el mismo tamaño de muestra, generalmente igual al tamaño de la muestra más pequeña
+
+
+```{r}
+summary <- summary(micros_genind)
+
+# Riqueza absoluta (sin rarefaccionar)
+summary$pop.n.all
+
+colMeans(allelic.richness(micros_genind)$Ar)
+allele.count(micros_genind)
+
+# Riqueza rarefaccionada
+hierfstat::basic.stats(micros_genind)
+
+PopGenReport::allel.rich(micros_genind, min.alleles = NULL)
+```

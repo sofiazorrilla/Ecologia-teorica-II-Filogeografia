@@ -4,6 +4,12 @@ subtitle: "Replica del artículo Vega-Sanchez et al., 2019"
 author: "Laboratorio de Filogeografía"
 date: today
 format:
+  typst:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    fig-height: 5
+    fig-width: 8
   html:
     toc: true
     toc-depth: 3
@@ -25,6 +31,7 @@ output-file: index.html
 ---
 
 # Introducción
+---
 
 Vamos a realizar una práctica de análisis básicos de filogeografía, tratando de replicar algunos de los resultados del artículo de [Vega-Sánchez et al., 2019](https://doi.org/10.1016/j.ympev.2019.106536). En este artículo se utilizaron secuencias COI e ITS de libélulas de la especie *Hetaerina americana*.
 
@@ -49,6 +56,9 @@ Nos enfocaremos en algunos de a análisis que se realizaron con las secuencias d
 7. Explorar las relaciones entre haplotipos mediante una red de haplotipos 
 8. Comparar las relaciones en la red con su distribución en el mapa.
 
+# Preparación de datos de entrada
+---
+
 ## Paquetes necesarios
 
 ```{r}
@@ -68,7 +78,8 @@ install.packages(c(
   "knitr",       
   "kableExtra",  
   "here",        
-  "fs",          
+  "fs",
+  "maps",          
   "pegas",       
   "adegenet",    
   "poppr",       
@@ -109,6 +120,7 @@ library(tidyr)      # Reorganización de datos (pivotar, separar o combinar colu
 library(gtools)     # Funciones auxiliares para manipulación de datos (por ejemplo ordenamiento natural)
 
 library(ggplot2)    # Visualización de datos y generación de gráficos
+library(maps)       # Herramientas de mapas
 library(RColorBrewer) # Paletas de colores para visualización de datos
 library(scatterpie) # Gráficos de pastel sobre mapas o coordenadas (ej. frecuencias de haplotipos)
 
@@ -139,7 +151,32 @@ library(fs)         # Manejo de archivos y directorios (crear, listar, verificar
 
 ## Organización del proyecto 
 
-1. Vamos a generar la estructura de directorios. 
+Una de las decisiones más importantes al iniciar un proyecto es cómo organizarlo. Una buena estructura permite que los análisis sean claros, estén bien documentados y, sobre todo, sean reproducibles. Aunque existen muchas formas de organizar un proyecto —y en gran medida depende de las preferencias personales y del equipo de trabajo—, hay algunos principios generales que conviene seguir.
+
+Primero, es fundamental conservar los datos crudos en un directorio separado. Esto permite volver al punto de partida en cualquier momento y asegura que todo el flujo de trabajo pueda reproducirse desde cero.
+
+Segundo, la estructura del proyecto debe estar claramente documentada. Cualquier persona (incluyéndote en el futuro) debería poder entender rápidamente dónde están los datos, los scripts y los resultados.
+
+Tercero, todos los pasos del análisis, así como las decisiones tomadas durante el proceso, deben registrarse. Esto no solo facilita la reproducibilidad, sino también la revisión, corrección y extensión del trabajo.
+
+**Tip de reproducibilidad**
+
+Un aspecto clave de la reproducibilidad es asegurarse de que otras personas (o tú misma en el futuro) puedan ejecutar el código en el mismo entorno en el que fue desarrollado. En R, esto implica controlar las versiones de los paquetes utilizados.
+
+Para ello, una herramienta muy útil es el paquete renv, que permite crear entornos aislados y registrar las versiones exactas de las dependencias del proyecto.
+
+```{r}
+#| eval: false
+
+# install.packages("renv")
+
+library(renv)
+renv::init()
+```
+
+**Estructura básica de directorios**
+
+A continuación, generaremos una estructura de directorios sencilla como punto de partida:
 
 ```{r}
 #| echo: false
@@ -149,15 +186,16 @@ fs::dir_tree("hetaerina_lab", recurse = F)
 ```
 
 
+
 ```{r}
 #| label: crear-directorios
 #| eval: false
 
 # Crear estructura de carpetas del proyecto
 dirs <- c(
-  "hetaerina_lab/00_raw_sequences",
+  "hetaerina_lab/00_raw_data",
   "hetaerina_lab/01_metadata",
-  "hetaerina_lab/02_aligned",
+  "hetaerina_lab/02_alignment",
   "hetaerina_lab/03_outputs"
 )
 
@@ -207,7 +245,7 @@ write(
   fasta_lote_COI,
   file = file.path(
     here(),
-    "hetaerina_lab/00_raw_sequences/raw_H_americana_COI.fasta"
+    "hetaerina_lab/00_raw_data/raw_H_americana_COI.fasta"
   )
 )
 
@@ -222,7 +260,7 @@ write(
 #   fasta_lote_ITS,
 #   file = file.path(
 #     here(),
-#     "hetaerina_lab/00_raw_sequences/raw_H_americana_ITS.fasta"
+#     "hetaerina_lab/00_raw_data/raw_H_americana_ITS.fasta"
 #   )
 # )
 ```
@@ -294,7 +332,7 @@ write.csv(
 
 
 ```{r}
-coi <- Biostrings::readDNAStringSet("hetaerina_lab/00_raw_sequences/raw_H_americana_COI.fasta")
+coi <- Biostrings::readDNAStringSet("hetaerina_lab/00_raw_data/raw_H_americana_COI.fasta")
 
 # Ejecutar MUSCLE a través del paquete msa
 coiAlign <- msa::msa(
@@ -305,7 +343,7 @@ coiAlign <- msa::msa(
 )
 ```
 
-## Inspección visual del alineamiento
+### Inspección visual del alineamiento
 
 ```{r}
 coiAlign_dnaBin <- msa::msaConvert(coiAlign, type = "ape::DNAbin")
@@ -342,14 +380,14 @@ coiAlign_trim <- coiAlign_dnaBin[, cols_conservar]
 
 ape::write.dna(
   coiAlign_trim,
-  file = "hetaerina_lab/02_aligned/alignment_coi_trimmed.fasta",
+  file = "hetaerina_lab/02_alignment/alignment_coi_trimmed.fasta",
   format = "fasta"
 )
 
 ape::checkAlignment(coiAlign_trim, what = 1)
 ```
 
-## Transformación de datos
+## Identificación de haplotipos
 
 Recuperamos los haplotipos del alineamiento
 
@@ -357,13 +395,14 @@ Recuperamos los haplotipos del alineamiento
 ```{r}
 
 
-coiAlign_trim <- ape::read.dna("hetaerina_lab/02_aligned/alignment_coi_trimmed.fasta", format = "fasta")
+coiAlign_trim <- ape::read.dna("hetaerina_lab/02_alignment/alignment_coi_trimmed.fasta", format = "fasta")
 
 coiHaplo <- pegas::haplotype(coiAlign_trim)
 coiHaplo
 ```
 
-# Estadísticos de diversidad
+# Análisis
+---
 
 ## Diversidad haplotípica y nucleotídica
 
@@ -532,7 +571,7 @@ plot(
 dev.off()
 ```
 
-## Mapa
+### Mapa
 
 
 ```{r}
@@ -611,4 +650,29 @@ ggplot() +
   ) +
   theme_classic(base_size = 13) +
   theme(legend.position = "none")
+```
+
+## Tip de reproducibilidad
+
+Para guardar los paquetes que utilizamos
+
+```{r}
+#| eval: false
+
+renv::snapshot()
+
+
+```
+
+
+```{r}
+lock <- renv::lockfile_read()
+
+tabla <- data.frame(
+  Package = names(lock$Packages),
+  Version = sapply(lock$Packages, function(x) x$Version),
+  row.names = NULL
+)
+
+knitr::kable(tabla)
 ```

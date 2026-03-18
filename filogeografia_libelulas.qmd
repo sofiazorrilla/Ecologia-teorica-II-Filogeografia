@@ -4,12 +4,12 @@ subtitle: "Replica del artículo Vega-Sanchez et al., 2019"
 author: "Laboratorio de Filogeografía"
 date: today
 format:
-  typst:
-    toc: true
-    toc-depth: 3
-    number-sections: true
-    fig-height: 5
-    fig-width: 8
+  # typst:
+  #   toc: true
+  #   toc-depth: 3
+  #   number-sections: true
+  #   fig-height: 3
+  #   fig-width: 6
   html:
     toc: true
     toc-depth: 3
@@ -27,37 +27,33 @@ execute:
   warning: false
   message: false
 lang: es
-output-file: index.html
+output-file: index
 ---
 
 # Introducción
----
 
 Vamos a realizar una práctica de análisis básicos de filogeografía, tratando de replicar algunos de los resultados del artículo de [Vega-Sánchez et al., 2019](https://doi.org/10.1016/j.ympev.2019.106536). En este artículo se utilizaron secuencias COI e ITS de libélulas de la especie *Hetaerina americana*.
 
-:::{.callout-note title="Preguntas"}
+::: {.callout-note title="Preguntas"}
+1.  ¿Cuáles eran las preguntas de investigación del artículo?
 
-1. ¿Cuáles eran las preguntas de investigación del artículo?
-
-2. ¿Cuál es el resultado principal?
-
+2.  ¿Cuál es el resultado principal?
 :::
 
-Nos enfocaremos en algunos de a análisis que se realizaron con las secuencias del COI. 
+Nos enfocaremos en algunos de a análisis que se realizaron con las secuencias del COI.
 
 ## Objetivos
 
-1. Descargar las secuencias
-2. Obtener metadatos geográficos
-3. Alinear secuencias y cortar regiones con datos faltantes
-4. Identificar haplotipos
-5. Obtener medidas básicas de diversidad genética 
-6. Explorar la estructura genética mediante un análisis AMOVA
-7. Explorar las relaciones entre haplotipos mediante una red de haplotipos 
-8. Comparar las relaciones en la red con su distribución en el mapa.
+1.  Descargar las secuencias
+2.  Obtener metadatos geográficos
+3.  Alinear secuencias y cortar regiones con datos faltantes
+4.  Identificar haplotipos
+5.  Obtener medidas básicas de diversidad genética
+6.  Explorar la estructura genética mediante un análisis AMOVA
+7.  Explorar las relaciones entre haplotipos mediante una red de haplotipos
+8.  Comparar las relaciones en la red con su distribución en el mapa.
 
 # Preparación de datos de entrada
----
 
 ## Paquetes necesarios
 
@@ -134,26 +130,27 @@ library(fs)         # Manejo de archivos y directorios (crear, listar, verificar
 
 ### Paquetes que vale la pena estudiar para análisis genéticos
 
-- [Adegenet](https://adegenet.r-forge.r-project.org/)
-- [Biostrings](https://bioconductor.org/packages/release/bioc/html/Biostrings.html)
-- [pegas](https://emmanuelparadis.github.io/pegas.html) 
-  - Hay un libro de texto que se llama [Population genetics with R](https://emmanuelparadis.github.io/PGR.html) con el que pueden practicar
-- [ape](https://github.com/emmanuelparadis/ape)
-  - Hay un libro de texto que se llama [Analysis of Phylogenetics and Evolution with R](https://emmanuelparadis.github.io/APER.html)
-
+-   [Adegenet](https://adegenet.r-forge.r-project.org/)
+-   [Biostrings](https://bioconductor.org/packages/release/bioc/html/Biostrings.html)
+-   [pegas](https://emmanuelparadis.github.io/pegas.html)
+    -   Hay un libro de texto que se llama [Population genetics with R](https://emmanuelparadis.github.io/PGR.html) con el que pueden practicar
+-   [ape](https://github.com/emmanuelparadis/ape)
+    -   Hay un libro de texto que se llama [Analysis of Phylogenetics and Evolution with R](https://emmanuelparadis.github.io/APER.html)
 
 ¿Qué estudiar?
-  
-  - ¿Cuál es la estructura de los objetos principales de cada paquete? 
-  - ¿Cómo puedo manipular las distintas partes?
-  - ¿Cómo transformar entre ellos?
-  - ¿Qué cosas puedo hacer con cada uno?
 
-## Organización del proyecto 
+-   ¿Cuál es la estructura de los objetos principales de cada paquete?
+-   ¿Cómo puedo manipular las distintas partes?
+-   ¿Cómo transformar entre ellos?
+-   ¿Qué cosas puedo hacer con cada uno?
 
-Una de las decisiones más importantes al iniciar un proyecto es cómo organizarlo. Una buena estructura permite que los análisis sean claros, estén bien documentados y, sobre todo, sean reproducibles. Aunque existen muchas formas de organizar un proyecto —y en gran medida depende de las preferencias personales y del equipo de trabajo—, hay algunos principios generales que conviene seguir.
+## Organización del proyecto
+
+Una de las decisiones más importantes al iniciar un proyecto es cómo organizarlo. Una buena estructura permite que los análisis sean claros, estén bien documentados y, sobre todo, sean reproducibles. Aunque existen muchas formas de organizar un proyecto, y en gran medida depende de las preferencias personales y del equipo de trabajo, hay algunos principios generales que conviene seguir.
 
 Primero, es fundamental conservar los datos crudos en un directorio separado. Esto permite volver al punto de partida en cualquier momento y asegura que todo el flujo de trabajo pueda reproducirse desde cero.
+
+Segundo, se puede estructurar las carpetas para
 
 Segundo, la estructura del proyecto debe estar claramente documentada. Cualquier persona (incluyéndote en el futuro) debería poder entender rápidamente dónde están los datos, los scripts y los resultados.
 
@@ -185,8 +182,6 @@ A continuación, generaremos una estructura de directorios sencilla como punto d
 fs::dir_tree("hetaerina_lab", recurse = F)
 ```
 
-
-
 ```{r}
 #| label: crear-directorios
 #| eval: false
@@ -204,16 +199,45 @@ for (d in dirs) {
 }
 ```
 
+## Flujo de trabajo general
+
+```{mermaid}
+%%| fig-cap: Flujo de trabajo para la descarga de datos
+%%| layout-align: center
+
+flowchart TD
+    A[Descarga de datos<br>y metadatos NCBI] --> B[Preparación de<br>datos de entrada]
+    B --> C[Alineamiento de<br>secuencias]
+    C --> D[Filtrado de<br>posiciones]
+    D --> E[Análisis de<br>diversidad]
+    E --> F[Análisis de estructura<br>genética]
+```
+
 ## Descarga de los datos
 
-En el material suplementario del artículo, en la tabla S1 podemos encontrar los números de acceso de las secuencias COI e ITS de las libélulas 
+```{mermaid}
+%%| layout-align: center
+%%| fig-cap: Flujo de trabajo para la descarga de datos
+%%| out-height: 10
 
-Primero vamos a generar un vector con todos los números de acceso de *H. americana* 
+flowchart TD
+  A[Generar códigos para buscar<br>secuencias en NCBI<br>accession number] --> B[Generar API para solicitar<br>códigos de acceso en el<br>servidor de NCBI]
+  B --> C[Usar la función<br>entrez_fetch para<br>solicitar secuencias]
+  C --> D[Guardar secuencias<br>en formato FASTA] 
+  D --> E[Usar la función<br>entrez_summary para descargar<br>metadatos de las secuencias]
+  E --> F[Guardar metadatos<br>en formato CSV]
+  F --> G[Unir metadatos con<br>datos geográficos]
+```
+
+En el material suplementario del artículo, en la tabla S1 podemos encontrar los números de acceso de las secuencias COI e ITS de las libélulas
+
+Primero vamos a generar un vector con todos los números de acceso de *H. americana*
 
 Nota: Solo vamos a trabajar con las localidades con números de acceso de GeneBank. Las otras secuencias las obtuvieron de otra base de datos llamada BOLD.
 
 ```{r}
 #| eval: false
+
 
 # H. americana - COI
 # MH084732-MH084741, and MH090478-MH090669
@@ -226,7 +250,7 @@ acc_COI <- c(acc1, acc2)
 acc_ITS <- paste0("MH", sprintf("%06d", 90377:90477))
 ```
 
-Para descargar secuencias de GeneBank se utiliza el paquete `rentrez`. Necesitan crear una [cuenta](https://www.ncbi.nlm.nih.gov/myncbi/) en GeneBank para poder generar una clave API que les permita descargar las secuencias. 
+Para descargar secuencias de GeneBank se utiliza el paquete `rentrez`. Necesitan crear una [cuenta](https://www.ncbi.nlm.nih.gov/myncbi/) en GeneBank para poder generar una clave API que les permita descargar las secuencias.
 
 ```{r}
 #| eval: false
@@ -267,7 +291,6 @@ write(
 
 ### Descargar metadatos
 
-
 ```{r}
 #| eval: false
 
@@ -295,8 +318,6 @@ metadata_COI <- mutate(
 )
 ```
 
-
-
 ### Unir metadatos geográficos
 
 ```{r}
@@ -310,7 +331,15 @@ geo_data <- read.table(
   header = T
 )
 
+metadata_COI <- read.csv(
+  file = "hetaerina_lab/01_metadata/metadata_COI.csv",
+  header = T
+)
+
 metadata_COI <- metadata_COI |> left_join(geo_data, by = c("locCode" = "Code"))
+
+# Comparar con los tamaños de muestra originales
+metadata_COI |> group_by(locCode) |> summarise(n = n(), n_orig = unique(N)) |> View()
 
 write.csv(
   metadata_COI,
@@ -327,8 +356,19 @@ write.csv(
 )
 ```
 
-
 ## Alineamiento
+
+
+```{mermaid}
+%%| layout-align: center
+%%| fig-cap: Flujo de trabajo para alineamiento
+
+flowchart TD
+    A[Cargar FASTA<br>desalineado] --> B[Alinear secuencias<br>utilizando MUSCLE]
+    B --> C[Inspeccionar<br>alineamiento]
+    C --> D[Cortar secuencias con<br>>50% datos faltantes]
+    D --> E[Identificar<br>haplotipos]
+```
 
 
 ```{r}
@@ -391,7 +431,6 @@ ape::checkAlignment(coiAlign_trim, what = 1)
 
 Recuperamos los haplotipos del alineamiento
 
-
 ```{r}
 
 
@@ -402,7 +441,6 @@ coiHaplo
 ```
 
 # Análisis
----
 
 ## Diversidad haplotípica y nucleotídica
 
@@ -413,7 +451,6 @@ La diversidad haplotípica (Hd) mide la probabilidad de que dos secuencias elegi
 La diversidad nucleotídica (π) representa el número promedio de diferencias nucleotídicas por sitio entre pares de secuencias de la muestra. Esta métrica proporciona una medida directa del grado de divergencia genética a nivel de nucleótidos dentro del conjunto de datos.
 
 Finalmente, calculamos la D de Tajima, una prueba estadística que compara diferentes estimadores de la diversidad genética basados en el número de sitios segregantes y en las diferencias promedio entre secuencias. Este estadístico permite evaluar desviaciones del modelo neutral de evolución que pueden deberse a procesos demográficos (como expansiones poblacionales o cuellos de botella) o a la acción de la selección natural.
-
 
 ```{r}
 Hd <- pegas::hap.div(coiHaplo, variance=TRUE)
@@ -427,6 +464,14 @@ Dtajima
 
 ## Diferenciación genética
 
+```{mermaid}
+%%| layout-align: center
+%%| fig-cap: Flujo de trabajo para estimar estructura genética (AMOVA)
+
+flowchart TD
+    A[Convertir alineamiento<br>a objeto genind] --> B[Asignar estratos a probar]
+    B --> C[Ejecutar Análisis de<br>Varianza Molecular]
+```
 
 ```{r}
 
@@ -445,7 +490,6 @@ coi_genind
 
 ### Análisis de varianza molecular AMOVA
 
-
 ```{r}
 
 amova_pop <- poppr::poppr.amova(coi_genind, hier = ~locCode, within=FALSE, method = "ade4")
@@ -455,6 +499,17 @@ amova_pop
 
 ### Redes de haplotipos
 
+```{mermaid}
+%%| layout-align: center
+%%| fig-cap: Flujo de trabajo para estimar estructura genética (red de haplotipos)
+
+flowchart TD
+    A[Generar red de haplotipos<br>con haploNet a partir de<br>objeto haplotipos] --> B[Estimar frecuencia de<br>cada haplotipo]
+    B --> C[Estimar frecuencia por<br>localidad]
+    C --> D[Identificar haplotipo<br>por individuo]
+    D --> E[Graficar la red]
+    E --> F[Acomodar haplotipos]
+```
 
 ```{r}
 rownames(coiHaplo) <- as.numeric(as.roman(rownames(coiHaplo)))
@@ -467,7 +522,11 @@ names(freq_hap) <- as.numeric(as.roman(names(freq_hap)))
 # ¿Qué haplotipo tiene cada individuo?
 tmp <- stack(setNames(attr(coiHaplo, "index"), rownames(coiHaplo))) # recuperar qué secuencia pertenece a qué haplotipo
 
-ind_hap <- tapply(as.integer(tmp$ind), tmp$values, identity) # Agrupar los haplotipos usando como índice los indiviuos, es decir, generar un objeto en el que podamos saber qué haplotipo tiene cada individuo.
+ind_hap <- tmp %>%
+  mutate(ind = as.integer(ind)) %>%
+  group_by(values) %>%
+  summarise(ind = list(ind), .groups = "drop") %>%
+  tibble::deframe() |> unlist() # Agrupar los haplotipos usando como índice los indiviuos, es decir, generar un objeto en el que podamos saber qué haplotipo tiene cada individuo.
 
 # Asignar colores a cada pais
 countries <- metadata_COI$Country # Vamos a colorear los haplotipos por pais
@@ -476,10 +535,7 @@ countries <- factor(countries, levels = unique(countries))
 
 n_countries <- length(unique(countries)) # Numero de localidades
 paleta <- RColorBrewer::brewer.pal(min(n_countries, 8), "Set1") # Asignar un color a cada pais
-colores_countries <- setNames(
-  paleta[as.integer(as.factor(unique(n_countries)))],
-  unique(n_countries)
-)
+
 
 # Matriz de proporción por haplotipo
 prop_matriz <- ind_hap |>
@@ -507,9 +563,6 @@ Para modificar las coordenadas, en una terminal vamos a correr el script `mini_c
 # Primero abrir la terminal, abrir R y correr:
 source("mini_code_redhap.R")  # carga la red
 
-# Posteriormente correr:
-coords_red <- pegas::replot()  # abre ventana interactiva
-saveRDS(coords_red, "hetaerina_lab/03_outputs/coords_red_haplotipos_modificadas.rds")
 ```
 
 ```{r}
@@ -572,7 +625,6 @@ dev.off()
 ```
 
 ### Mapa
-
 
 ```{r}
 #| fig-width: 15
@@ -660,10 +712,7 @@ Para guardar los paquetes que utilizamos
 #| eval: false
 
 renv::snapshot()
-
-
 ```
-
 
 ```{r}
 lock <- renv::lockfile_read()

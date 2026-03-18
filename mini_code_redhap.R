@@ -10,7 +10,7 @@ library(pegas)
 library(dplyr)
 library(tidyr)
 
-coiAlign_trim <- read.dna("hetaerina_lab/02_aligned/alignment_coi_trimmed.fasta", format = "fasta")
+coiAlign_trim <- read.dna("hetaerina_lab/02_alignment/alignment_coi_trimmed.fasta", format = "fasta")
 
 coiHaplo <- haplotype(coiAlign_trim)
 

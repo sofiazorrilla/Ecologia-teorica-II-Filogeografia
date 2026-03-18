@@ -11,3 +11,8 @@ Vega-Sanchez2019/
 .Rproj.user
 .cspell
 /.quarto/
+
+test.qmd
+*.Rproj
+
+**/*.quarto_ipynb

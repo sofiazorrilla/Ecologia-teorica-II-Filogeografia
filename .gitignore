@@ -3,6 +3,8 @@ hamadryas/
 material_cucu/
 SNPs.qmd
 Vega-Sanchez2019/
+# Archivos html fuera de la carpeta de docs/
+*.html 
 
 # Archivos para ignorar
 .Renviron

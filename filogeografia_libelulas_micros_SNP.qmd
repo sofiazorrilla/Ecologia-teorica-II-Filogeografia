@@ -3,25 +3,25 @@ title: "Laboratorio de Filogeografía: Género *Hamadryas*"
 subtitle: "Basado en el artículo Vega-Sanchez et al., 2023 y Vega-Sanchez et al., 2019"
 author: "Laboratorio de Filogeografía"
 date: today
-format: typst
-  #  html:
-  #   toc: true
-  #   toc-depth: 3
-  #   toc-title: "Contenido"
-  #   number-sections: true
-  #   theme: cosmo
-  #   highlight-style: github
-  #   code-fold: false
-  #   code-tools: true
-  #   fig-width: 8
-  #   fig-height: 5
-  #   embed-resources: true
-  #   code-overflow: wrap
+format: 
+   html:
+    toc: true
+    toc-depth: 3
+    toc-title: "Contenido"
+    number-sections: true
+    theme: cosmo
+    highlight-style: github
+    code-fold: false
+    code-tools: true
+    fig-width: 8
+    fig-height: 5
+    embed-resources: true
+    code-overflow: wrap
 execute:
   warning: false
   message: false
 lang: es
-output-file: index.html
+output-file: index_micros.html
 ---
 
 # Introducción
@@ -42,15 +42,15 @@ output-file: index.html
  library(hierfstat)
  library(reshape2)
  library(ggplot2)
- library(LEA)
- library(rworldmap)
- library(maptools)
- library(ggsn)
+ #library(LEA)
+ #library(rworldmap)
+ #library(maptools)
+ #library(ggsn)
  library(vegan)
- library(raster)
- library(ggpubr)
+ #library(raster)
+ #library(ggpubr)
  library(tidyverse)
-
+library(PopGenReport)
 
 
 ```
@@ -88,7 +88,7 @@ Ahora vamos a convertir este objeto en uno de clase `genind` del paquete `adegen
 
 
 ```{r}
-?`genind-class`
+#?`genind-class`
 
 micros_genind <- adegenet::df2genind(
   X = micros[, -c(1:4)],
@@ -174,7 +174,7 @@ Aquí los investigadores tienen que decidir si continúan utilizando todos los l
 
 En este artículo tenían la ventaja de contar con varios tipos de datos: secuencias de COI, secuencias nucleares y microsatélites. Por eso es probable que hayan decidido continuar utilizando todos los loci. Sin embargo, este tipo de decisiones debería discutirse al interpretar los resultados: ¿qué tanto podríamos esperar que la falta de equilibrio afecte las inferencias del estudio?
 
-### Riqueza rarefaccionada de alelos
+### Riqueza y riqueza rarefaccionada de alelos
 
 La riqueza corresponde al número de alelos y muchas veces nos interesa compararla entre distintas regiones o poblaciones. Sin embargo, cuando los tamaños de muestra no son iguales, esta comparación no es justa, ya que esperaríamos encontrar más alelos simplemente porque se muestrearon más individuos.
 
@@ -182,16 +182,76 @@ Por lo tanto, podemos calcular la riqueza rarefaccionada, que consiste en estima
 
 
 ```{r}
+#| tbl-cap: Tabla comparativa de la riqueza y la riqueza rarefaccionada. N = número de individuos, Na = riqueza de alelos por población, Ar = riqueza rarefaccionada (min = 8)
+
 summary <- summary(micros_genind)
 
 # Riqueza absoluta (sin rarefaccionar)
 summary$pop.n.all
 
-colMeans(allelic.richness(micros_genind)$Ar)
-allele.count(micros_genind)
-
 # Riqueza rarefaccionada
-hierfstat::basic.stats(micros_genind)
+summary_rarefied <- PopGenReport::allel.rich(micros_genind, min.alleles = NULL)
 
-PopGenReport::allel.rich(micros_genind, min.alleles = NULL)
+knitr::kable(data.frame(
+  N = summary$n.by.pop,
+  Na = summary$pop.n.all,
+  Ar = round(summary_rarefied$sum.richness, digits = 2)
+))
 ```
+
+### Heterocigocidad observada y esperada
+
+- La heterocigosidad observada corresponde a la proporción promedio de individuos heterocigotos (entre loci) en la población.
+
+- La heterocigosidad esperada corresponde a la proporción de heterocigotos que se esperaría a partir de las frecuencias alélicas si la población se encontrara en equilibrio de Hardy–Weinberg. También puede interpretarse como la probabilidad de que dos alelos tomados al azar sean distintos, por lo que constituye una medida de diversidad genética.
+
+- Cuando la heterocigosidad observada es menor que la esperada, esto puede indicar la presencia de endogamia en la población.
+
+
+```{r}
+heterocigocity <- data.frame(
+  Ho = round(hierfstat::Ho(micros_genind), 3),
+  He = round(adegenet::Hs(micros_genind), 3)
+) |>
+  mutate(
+    differencia = ifelse(
+      Ho > He,
+      "Exceso",
+      ifelse(Ho < He, "Déficit", "Iguales")
+    )
+  ) 
+
+heterocigocity |> kable()
+  
+```
+
+Podemos estimar la presencia de endogamia mediante el coeficiente de endogamia
+
+```{r}
+
+basic_stats_micros <- hierfstat::basic.stats(micros_genind, diploid = TRUE)
+
+Fis_micros<- apply(basic_stats_micros$Fis, MARGIN = 2, FUN = mean, na.rm = TRUE) %>% round(digits = 3)
+
+Fis_micros
+```
+
+Hagamos una tabla resumen con todos los parámetros que hemos calculado
+
+
+```{r}
+micros_diversity <- data.frame(
+  N = summary$n.by.pop,
+  Na = summary$pop.n.all,
+  Ar = round(summary_rarefied$sum.richness, digits = 2),
+  Ho = heterocigocity$Ho,
+  He = heterocigocity$He,
+  Fis = Fis_micros
+) |>
+  rownames_to_column(var = "Pop")
+
+micros_diversity |> kable()
+
+```
+
+## 

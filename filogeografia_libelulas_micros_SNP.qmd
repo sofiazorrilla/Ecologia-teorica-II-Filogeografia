@@ -547,7 +547,7 @@ kable(tabla_pertenencia)
 
 
 
-:::{.callout-note icon="false" title="Snapshot de los paquetes de R utilizados" collapse="true"}
+:::{.callout-tip icon="false" title="Snapshot de los paquetes de R utilizados" collapse="true"}
 
 ## Renv snapshot
 

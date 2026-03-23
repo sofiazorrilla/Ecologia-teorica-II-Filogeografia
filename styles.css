@@ -1,0 +1,25 @@
+/* Reinicia contador global */
+body {
+  counter-reset: line;
+}
+
+/* Solo aplica a bloques de código con highlight */
+pre code {
+  counter-reset: none;
+}
+
+/* Cada línea */
+pre code > span {
+  counter-increment: line;
+  display: block;
+}
+
+/* Número de línea */
+pre code > span::before {
+  content: counter(line);
+  display: inline-block;
+  width: 3em;
+  margin-right: 1em;
+  color: #888;
+  text-align: right;
+}

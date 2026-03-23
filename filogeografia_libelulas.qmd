@@ -3,31 +3,6 @@ title: "Laboratorio de Filogeografía: Género *Hamadryas*"
 subtitle: "Replica del artículo Vega-Sanchez et al., 2019"
 author: "Laboratorio de Filogeografía"
 date: today
-format:
-  # typst:
-  #   toc: true
-  #   toc-depth: 3
-  #   number-sections: true
-  #   fig-height: 3
-  #   fig-width: 6
-  html:
-    toc: true
-    toc-depth: 3
-    toc-title: "Contenido"
-    number-sections: true
-    theme: cosmo
-    highlight-style: github
-    code-fold: false
-    code-tools: true
-    fig-width: 8
-    fig-height: 5
-    embed-resources: true
-    code-overflow: wrap
-execute:
-  warning: false
-  message: false
-lang: es
-output-file: index
 ---
 
 # Introducción
@@ -99,6 +74,7 @@ BiocManager::install(c(
 ```{r}
 #| label: cargar-paquetes
 #| message: false
+#| code-overflow: scroll
 
 library(bold)       # Herramientas para descargar secuencias de la base de datos BOLD (Barcode of Life)
 library(rentrez)    # Interfaz para consultar y descargar secuencias de NCBI (GenBank)
@@ -339,10 +315,14 @@ metadata_COI <- read.csv(
   header = T
 )
 
-metadata_COI <- metadata_COI |> left_join(geo_data, by = c("locCode" = "Code"))
+metadata_COI <- metadata_COI |> 
+  left_join(geo_data, by = c("locCode" = "Code"))
 
 # Comparar con los tamaños de muestra originales
-metadata_COI |> group_by(locCode) |> summarise(n = n(), n_orig = unique(N)) |> View()
+metadata_COI |>
+  group_by(locCode) |>
+  summarise(n = n(), n_orig = unique(N)) |>
+  View()
 
 write.csv(
   metadata_COI,
@@ -350,7 +330,8 @@ write.csv(
   row.names = F
 )
 
-metadata_ITS <- metadata_ITS |> left_join(geo_data, by = c("locCode" = "Code"))
+metadata_ITS <- metadata_ITS |> 
+  left_join(geo_data, by = c("locCode" = "Code"))
 
 write.csv(
   metadata_ITS,
@@ -552,7 +533,7 @@ coi_genind
 
 El AMOVa es un análisis inspirado en el ANOVA. Cuantifica cómo se distribuyen las diferencias genéticas (variación) dentro y entre poblaciones o grupos. En poblaciones en las que no hay estructura genética (todos se reproducen con todos), esperamos que la mayor parte de la variación se encuentre dentro de los grupos, en cambio si encontramos que hay mayor variación entre grupos esperamos que exista estructura genética.
 
-Se calcula de la siguiente manera:
+<!-- Se calcula de la siguiente manera:
 
 1. Se estima una matriz de distancias genéticas $d_{ij}$ entre todos los individuos
 
@@ -601,7 +582,7 @@ Las Sumas de Cuadrados se dividen por sus respectivos grados de libertad para ob
 Una vez que tienes $\sigma^2_a$, $\sigma^2_b$ y $\sigma^2_c$, sumas las tres para obtener la Varianza Total. Luego, calculas el porcentaje que cada una aporta:
 
 - Si el % de $\sigma^2_b$ es muy alto: Hay más diferencias entre individuos de distintas poblaciones que entre individuos de la misma población
-- Si el % de $\sigma^2_c$ es el dominante: Hay más diferencias entre individuos de la misma población que entre poblaciones
+- Si el % de $\sigma^2_c$ es el dominante: Hay más diferencias entre individuos de la misma población que entre poblaciones -->
 
 ```{r}
 

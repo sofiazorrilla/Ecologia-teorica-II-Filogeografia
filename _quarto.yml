@@ -1,0 +1,36 @@
+project:
+  type: website
+  output-dir: docs
+  render: 
+    - filogeografia_libelulas.qmd
+    - filogeografia_libelulas_micros_SNP.qmd
+
+website:
+  title: "Prácticas de Filogeografía"
+  navbar:
+    left:
+      - href: filogeografia_libelulas.qmd
+        text: Práctica de secuencias
+      - href: filogeografia_libelulas_micros_SNP.qmd
+        text: Práctica de microsatélites
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-title: "Contenido"
+    number-sections: true
+    highlight-style: github
+    code-fold: false
+    code-tools: true
+    fig-width: 8
+    fig-height: 5
+    embed-resources: true
+    code-overflow: scroll
+    code-line-numbers: false
+    css: styles.css
+execute:
+  warning: false
+  message: false
+lang: es

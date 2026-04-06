@@ -82,13 +82,25 @@ library(forcats)
 
 ## Importación de datos
 
-Prmero vamos a recordar la estructura de nuestro proyecto. 
+Prmero vamos a crear la estructura de nuestro proyecto. 
 
 ```{r}
 #| echo: false
 #| message: false
 
-fs::dir_tree("hetaerina_lab")
+# Crear estructura de carpetas del proyecto
+dirs <- c(
+  "hetaerina_practica_micros/00_raw_data",
+  "hetaerina_practica_micros/01_metadata",
+  "hetaerina_practica_micros/03_outputs"
+)
+
+for (d in dirs) {
+  if (!dir.exists(d)) dir.create(d, recursive = TRUE)
+}
+
+fs::dir_tree("hetaerina_practica_micros")
+
 ```
 
 Los datos que vamos a utilizar están guardados en el archivo `micros_hetaerina.csv`. Los vamos a leer como `data.frame`.
@@ -98,7 +110,7 @@ Las primeras columnas contienen información sobre cada individuo: la población
 Después aparecen las columnas que comienzan con H, que corresponden a los genotipos en cada locus (cada columna representa un locus distinto). Los números indican el tamaño de los microsatélites detectados para ese individuo en ese locus.
 
 ```{r}
-micros <- read.csv("hetaerina_lab/00_raw_data/micros_hetaerina.csv") |>
+micros <- read.csv("hetaerina_practica_micros/00_raw_data/micros_hetaerina.csv") |>
   mutate(across(c(Poblacion, morfo, pops, Individuo), factor))
 
 rownames(micros) <- micros$Individuo
@@ -295,10 +307,14 @@ kclusters <- find.clusters(
   micros_genind,
   max.n.clust = 26,
   n.pca = 20,
-  n.clust = 4,
-  n.iter = 10
+  # n.clust = 4,
+  # n.iter = 10
 )
+
+
 ```
+
+Después tenemos que escoger el número de componentes principales que queremos mantener en nuestro análisis
 
 ```{r}
 #| label: numero de pc
@@ -403,7 +419,7 @@ colnames(tabla_pertenencia) <- make.names(c(
 ))
 
 # Leer archivo de coordenadas
-coords <- read.csv("hetaerina_lab/01_metadata/coordinates_micros.csv")
+coords <- read.csv("hetaerina_practica_micros/01_metadata/coordinates_micros.csv")
 
 frecuencias_por_pop <- tabla_pertenencia |>
   as.data.frame() |>

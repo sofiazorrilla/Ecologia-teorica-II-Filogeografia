@@ -82,7 +82,7 @@ library(forcats)
 
 ## Importación de datos
 
-Prmero vamos a crear la estructura de nuestro proyecto. 
+Prmero vamos a crear la estructura de nuestro proyecto.
 
 ```{r}
 #| echo: false
@@ -102,6 +102,31 @@ for (d in dirs) {
 fs::dir_tree("hetaerina_practica_micros")
 
 ```
+
+Ahora vamos a descargar los datos desde el repositorio y guardarlos en la carpeta de `00_raw_data` y la carpeta de `01_metadata`. En ambos casos son archivos csv y los podemos leer directamente de internet usando la función `read.csv`.
+
+```{r}
+#| eval: false
+
+micros <- read.csv(
+  "https://raw.githubusercontent.com/sofiazorrilla/Ecologia-teorica-II-Filogeografia/refs/heads/main/hetaerina_practica_micros/00_raw_data/micros_hetaerina.csv"
+)
+
+write.csv(micros,
+          "hetaerina_practica_micros/00_raw_data/micros_hetaerina.csv",
+          row.names = F)
+
+coords <- read.csv(
+  "https://raw.githubusercontent.com/sofiazorrilla/Ecologia-teorica-II-Filogeografia/refs/heads/main/hetaerina_practica_micros/01_metadata/coordinates_micros.csv"
+)
+
+write.csv(
+  coords,
+  "hetaerina_practica_micros/01_metadata/coordinates_micros.csv",
+  row.names = F
+)
+```
+
 
 Los datos que vamos a utilizar están guardados en el archivo `micros_hetaerina.csv`. Los vamos a leer como `data.frame`.
 
@@ -190,13 +215,19 @@ HWE.test.chisq <- t(data.matrix(HWE.test))
 
 
 ```{r}
-alpha = 0.05 # Define el nivel de significancia. Un locus se considera fuera de HWE si p < α.
+# Define el nivel de significancia. Un locus se considera fuera de HWE si p < α.
+alpha = 0.05 
 
 # Aqui vamos a utilizar un truco:
 
-# Para cada fila revisamos cuántas celdas cumplen la condición HWE.test.chisq < α. Esto genera un vector de valores lógicos (TRUE o FALSE). Si convertimos ese vector a valores numéricos, TRUE = 1 y FALSE = 0.
+# Para cada fila revisamos cuántas celdas cumplen la condición HWE.test.chisq <
+# α. Esto genera un vector de valores lógicos (TRUE o FALSE). Si convertimos ese
+# vector a valores numéricos, TRUE = 1 y FALSE = 0.
 
-# Para obtener la proporción de loci que cumplen la condición, podríamos contar los que sí la cumplen y dividirlos entre el número total de loci. Sin embargo, esta operación es equivalente a sumar los valores TRUE (que ahora valen 1) y calcular su promedio.
+# Para obtener la proporción de loci que cumplen la condición, podríamos contar
+# los que sí la cumplen y dividirlos entre el número total de loci. Sin embargo,
+# esta operación es equivalente a sumar los valores TRUE (que ahora valen 1) y
+# calcular su promedio.
 
 Prop.pops.out.of.HWE <- data.frame(
   Chisq = apply(HWE.test.chisq < alpha, 1, mean)
@@ -249,7 +280,7 @@ heterocigocity <- data.frame(
   He = round(adegenet::Hs(micros_genind), 3)
 ) |>
   mutate(
-    differencia = ifelse(
+    diferencia = ifelse(
       Ho > He,
       "Exceso",
       ifelse(Ho < He, "Déficit", "Iguales")
